@@ -1,0 +1,25 @@
+# Exclude the project virtual environment from image builds
+.venv
+
+# Git
+.git
+.gitignore
+
+# Docker
+Dockerfile
+docker-compose*.yaml
+.dockerignore
+
+# Documentation
+README.md
+*.md
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db

@@ -1,0 +1,18 @@
+name: citycompass-dev
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - 8000:8000
+    volumes:
+      # Mount source code for hot reloading
+      - ./backend:/app
+      # Exclude .venv from being mounted (keep container's virtual env)
+      - /app/.venv
+    environment:
+      - PYTHONPATH=/app
+      - WATCHFILES_FORCE_POLLING=true
+    restart: unless-stopped
