@@ -39,23 +39,22 @@ A FastAPI-based backend service for the CityCompass application.
 
 ### Docker Commands
 
-    ```bash
-    # Start development environment
-    docker-compose -f docker-compose.dev.yaml up
+```bash
+# Start development environment
+docker-compose -f docker-compose.dev.yaml up
 
-    # Rebuild and start
-    docker-compose -f docker-compose.dev.yaml up --build
+# Rebuild and start
+docker-compose -f docker-compose.dev.yaml up --build
 
-    # Stop services
-    docker-compose -f docker-compose.dev.yaml down
-    ```
+# Stop services
+docker-compose -f docker-compose.dev.yaml down
+```
 
 ### Local Development
+```bash
+# Install dependencies
+uv sync
 
-    ```bash
-    # Install dependencies
-    uv sync
-
-    # Start development server
-    fastapi dev app/main.py
-    ```
+# Start development server
+fastapi dev app/main.py
+```
