@@ -2,14 +2,17 @@ import Image from "next/image";
 import Link from 'next/link';
 import { NavBar } from "./components/NavBar";
 import HomepageHeroSection from "./components/HomepageHeroSection";
+import FeatureGrid from "./components/FeatureGrid";
+import PlatformImpact from "./components/PlatformImpact";
+
 
 export default function Home() {
   return (
     <main className="-center">
       <NavBar />
       <HomepageHeroSection />
-
-
+      <FeatureGrid />
+      <PlatformImpact />
     </main>
   );
 }
