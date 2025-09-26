@@ -28,7 +28,7 @@ const features = [
 
 const PlatformImpact = () => {
     return (
-        <section> 
+        <section className="mb-10"> 
             <div className="flex flex-col items-center p-8">   
 
                 <h1 className=" text-4xl font-bold text-primary p-4"> 
@@ -42,17 +42,17 @@ const PlatformImpact = () => {
             </div>
 
             <div className="flex justify-center flex-row">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 w-[60%]">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 w-[70%]">
                     {features.map((feature, index) => ( 
 
                         <Card key={index} className=" items-center border-0 shadow-sm hover:shadow-md transition-shadow"> 
-                            <CardHeader className="w-[80%]">
+                            <CardHeader className="w-[90%]">
 
-                                <CardTitle>{feature.title}</CardTitle>
-                                <CardDescription>Card Description</CardDescription>
+                                <CardTitle className="text-4xl text-center" >{feature.number}</CardTitle>
+                                <CardDescription className="text-lg text-center">{feature.title}</CardDescription>
                             </CardHeader>
                             <CardContent>
-                                <p>Card Content</p>
+                                <p className="text-sm text-center">{feature.description}</p>
                             </CardContent>
                         </Card>
                     ))}
