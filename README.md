@@ -26,9 +26,10 @@ citycompass/
 
 ### Prerequisites
 
-- Docker and Docker Compose
-- Node.js 18+ (for frontend development)
-- Python 3.12+ (for backend development)
+- **Docker and Docker Compose** (required for running the full project)
+- **Git** (for cloning the repository)
+
+> **Note**: Node.js and Python are not required on your local machine since everything runs in Docker containers.
 
 ### Development Setup
 
@@ -42,18 +43,50 @@ citycompass/
 2. **Start the development environment**
 
    ```bash
-   # Start both backend and frontend
+   # Start all services (database, backend, frontend, pgAdmin)
    docker-compose -f docker-compose.dev.yaml up --build
-
-   # Or start specific services
-   docker-compose -f docker-compose.dev.yaml up backend
-   docker-compose -f docker-compose.dev.yaml up frontend
    ```
 
 3. **Access the applications**
-   - Backend API: http://localhost:8000
-   - Frontend: http://localhost:3000
-   - API Documentation: http://localhost:8000/docs
+   - **Frontend**: http://localhost:3000
+   - **Backend API**: http://localhost:8000
+   - **API Documentation**: http://localhost:8000/docs
+   - **pgAdmin (Database UI)**: http://localhost:5050
+
+### Database Access
+
+The application includes a PostgreSQL database and pgAdmin for database management:
+
+1. **Access pgAdmin**: Go to http://localhost:5050
+2. **Login credentials**:
+   - Email: `admin@citycompass.com`
+   - Password: `admin`
+3. **Add database server**:
+   - Right-click "Servers" → "Register" → "Server"
+   - **General tab**: Name: `CityCompass DB`
+   - **Connection tab**:
+     - Host: `db`
+     - Port: `5432`
+     - Database: `citycompass`
+     - Username: `citycompass`
+     - Password: `citycompass`
+
+### Environment Variables (Optional)
+
+For full functionality including OAuth authentication, create a `.env` file in the `backend/` directory:
+
+```bash
+# Copy the example file
+cp backend/.env.example backend/.env
+
+# Edit with your OAuth credentials
+GOOGLE_CLIENT_ID=your_google_client_id_here
+GOOGLE_CLIENT_SECRET=your_google_client_secret_here
+MICROSOFT_CLIENT_ID=your_microsoft_client_id_here
+MICROSOFT_CLIENT_SECRET=your_microsoft_client_secret_here
+```
+
+> **Note**: The application will run without OAuth credentials, but authentication features will be limited.
 
 ## 🛠️ Development Commands
 
@@ -103,10 +136,11 @@ docker-compose -f docker-compose.dev.yaml logs -f frontend
 
 ### Backend (`/backend`)
 
-- **Technology**: FastAPI, Python 3.12
+- **Technology**: FastAPI, Python 3.12, SQLAlchemy
 - **Purpose**: API server, business logic, data processing
 - **Port**: 8000
 - **Documentation**: http://localhost:8000/docs
+- **Database**: PostgreSQL
 
 ### Frontend (`/citycompass`)
 
@@ -114,6 +148,22 @@ docker-compose -f docker-compose.dev.yaml logs -f frontend
 - **Purpose**: User interface, client-side logic
 - **Port**: 3000
 - **URL**: http://localhost:3000
+
+### Database (`db`)
+
+- **Technology**: PostgreSQL 16
+- **Purpose**: Data persistence, user data, application state
+- **Port**: 5432 (internal)
+- **Credentials**: `citycompass:citycompass`
+- **Database Name**: `citycompass`
+
+### pgAdmin (`pgadmin`)
+
+- **Technology**: pgAdmin 4
+- **Purpose**: Database management and visualization
+- **Port**: 5050
+- **URL**: http://localhost:5050
+- **Login**: `admin@citycompass.com` / `admin`
 
 ### Machine Learning (`/ml`)
 
