@@ -1,4 +1,4 @@
-name: citycompass-dev
+name: citycompass-prod
 
 services:
   backend:
@@ -7,14 +7,9 @@ services:
       dockerfile: Dockerfile
     ports:
       - "8000:8000"
-    volumes:
-      # Mount source code for hot reloading
-      - ./backend:/app
-      # Exclude .venv from being mounted (keep container's virtual env)
-      - /app/.venv
     environment:
+      - ENV=production
       - PYTHONPATH=/app
-      - WATCHFILES_FORCE_POLLING=true
     restart: unless-stopped
     networks:
       - citycompass-network
@@ -22,17 +17,11 @@ services:
   frontend:
     build:
       context: ./citycompass
-      dockerfile: Dockerfile.dev
+      dockerfile: Dockerfile
     ports:
       - "3000:3000"
-    volumes:
-      # Mount source code for hot reloading
-      - ./citycompass:/app
-      # Exclude node_modules from being mounted
-      - /app/node_modules
-      - /app/.next
     environment:
-      - NODE_ENV=development
+      - NODE_ENV=production
       - NEXT_TELEMETRY_DISABLED=1
       - NEXT_PUBLIC_API_URL=http://localhost:8000
     restart: unless-stopped
