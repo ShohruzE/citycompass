@@ -1,71 +1,92 @@
-"use client"
+'use client';
 
 import * as React from "react"
 import Link from "next/link"
-import { CircleCheckIcon, CircleHelpIcon, CircleIcon } from "lucide-react"
+import { MapPin} from 'lucide-react';
 import { Button } from "@/components/ui/button"
 
 import {
   NavigationMenu,
-  NavigationMenuContent,
   NavigationMenuItem,
   NavigationMenuLink,
   NavigationMenuList,
-  NavigationMenuTrigger,
   navigationMenuTriggerStyle,
 } from "@/components/ui/navigation-menu"
 
 
 
 export function NavBar() {
-  return (<NavigationMenu className="w-full ">
-<NavigationMenuList className="">
-        {/* <div className="flex items-center gap-4"> */}
-      <NavigationMenuItem>...logo/home...</NavigationMenuItem>
-    {/* </div> */}
+  return (
+    <div className="justify-between flex flex-row pb-4 border-b-2 mb-8 ">
+    
+      <NavigationMenu className="w-full ">
+        <NavigationMenuList className="">
 
-    {/* <div className="flex items-center gap-6 ml-auto"> */}
-      <NavigationMenuItem>
-        <NavigationMenuLink asChild className={navigationMenuTriggerStyle()}>
-          <Link href="/">Home</Link>
-        </NavigationMenuLink>
-      </NavigationMenuItem>
+          <NavigationMenuItem className="flex flex-row">
+            <MapPin className="w-8 h-8 text-blue-500 " />
 
-      <NavigationMenuItem>
-        <NavigationMenuLink asChild className={navigationMenuTriggerStyle()}>
-          <Link href="/map">Interactive Map</Link>
-        </NavigationMenuLink>
-      </NavigationMenuItem>
+            <NavigationMenuLink asChild className={navigationMenuTriggerStyle()}>
+              <Link href="/" className="flex flex-row">
+                
+                <h1 className="text-2xl">NYC Analytics</h1>
+              </Link>
+            </NavigationMenuLink>
+          </NavigationMenuItem>
 
-      <NavigationMenuItem>
-        <NavigationMenuLink asChild className={navigationMenuTriggerStyle()}>
-          <Link href="/survey">Take Survey</Link>
-        </NavigationMenuLink>
-      </NavigationMenuItem>
+        </NavigationMenuList>
+      </NavigationMenu>
 
-      <NavigationMenuItem>
-        <NavigationMenuLink asChild className={navigationMenuTriggerStyle()}>
-          <Link href="/insights">Insights</Link>
-        </NavigationMenuLink>
-      </NavigationMenuItem>
+      <NavigationMenu className="w-full ">
+        <NavigationMenuList className="">
 
-      <NavigationMenuItem>
-        <NavigationMenuLink asChild className={navigationMenuTriggerStyle()}>
-          <Link href="/compare">Compare</Link>
-        </NavigationMenuLink>
-      </NavigationMenuItem>
+          <NavigationMenuItem>
+            <NavigationMenuLink asChild className={navigationMenuTriggerStyle()}>
+              <Link href="/map">Interactive Map</Link>
+            </NavigationMenuLink>
+          </NavigationMenuItem>
 
-      <NavigationMenuItem>
-        <Link href="/sign_in"> <Button>Sign In</Button></Link>
-      </NavigationMenuItem>
+          <NavigationMenuItem>
+            <NavigationMenuLink asChild className={navigationMenuTriggerStyle()}>
+              <Link href="/survey">Take Survey</Link>
+            </NavigationMenuLink>
+          </NavigationMenuItem>
 
-      <NavigationMenuItem>
-          <Link href="/sign_in"><Button >Get Started </Button></Link>
-      </NavigationMenuItem>
-    {/* </div> */}
-  </NavigationMenuList>
-  
-</NavigationMenu>
+          <NavigationMenuItem>
+            <NavigationMenuLink asChild className={navigationMenuTriggerStyle()}>
+              <Link href="/insights">Insights</Link>
+            </NavigationMenuLink>
+          </NavigationMenuItem>
+
+          <NavigationMenuItem>
+            <NavigationMenuLink asChild className={navigationMenuTriggerStyle()}>
+              <Link href="/compare">Compare</Link>
+            </NavigationMenuLink>
+          </NavigationMenuItem>
+
+        </NavigationMenuList>
+      </NavigationMenu>
+        
+
+      <NavigationMenu className="w-full ">
+        <NavigationMenuList className="">
+
+          <NavigationMenuItem>
+            <NavigationMenuLink asChild className={navigationMenuTriggerStyle()}>
+              <Link href="/map"><Button> Sign In </Button> </Link>
+            </NavigationMenuLink>
+          </NavigationMenuItem>
+
+          <NavigationMenuItem>
+            <NavigationMenuLink asChild className={navigationMenuTriggerStyle()}>
+              <Link href="/map"><Button> Get Started </Button> </Link>
+            </NavigationMenuLink>
+          </NavigationMenuItem>
+
+        </NavigationMenuList>
+      </NavigationMenu>
+
+    </div>
+
   )
 }
 

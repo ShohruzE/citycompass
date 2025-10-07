@@ -1,26 +1,19 @@
-import Image from "next/image";
 import Link from 'next/link';
-import ProductCard from "./components/ProductCard";
-import { Button } from "@/components/ui/button"
 import { NavBar } from "./components/NavBar";
+import HomepageHeroSection from "./components/HomepageHeroSection";
+import FeatureGrid from "./components/FeatureGrid";
+import PlatformImpact from "./components/PlatformImpact";
+import Footer from "./components/Footer";
+
 
 export default function Home() {
   return (
-    <main>
+    <main className="-center">
       <NavBar />
-      <div className="flex max-w-3xl justify-center align-items-center items-center flex-col  ">
-
-        <h1 className=" text-[50px] font-bold ">
-          Understanding NYC <span className="px-5 text-[#00a6ae]">Neighborhoods</span>
-          Through Community Voice 
-        </h1>
-
-        <p>
-          Empowering residents, politicians, and government workers with data-driven insights about
-           neighborhood safety, cleanliness, and quality of life across New York City.
-        </p>
-      </div>
-
+      <HomepageHeroSection />
+      <FeatureGrid />
+      <PlatformImpact />
+      <Footer />
     </main>
   );
 }
