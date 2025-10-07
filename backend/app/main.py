@@ -25,8 +25,14 @@ from starlette.responses import HTMLResponse, RedirectResponse
 #  Authlib allows us to use OAuth to authenticate users using popular services like MS and Google
 from authlib.integrations.starlette_client import OAuth, OAuthError
 
+import auth
+from auth import get_current_user
+from starlette import status
+
 # initialize FastAPI App
 app = FastAPI()
+
+app.include_router(auth.router)
 # #document_further
 models.Base.metadata.create_all(bind=engine)
 # Adds session Middleware #document_further
@@ -48,6 +54,8 @@ def get_db():
 
 #  #document_further
 db_dependency = Annotated[Session, Depends(get_db)]
+
+user_dependency = Annotated[dict, Depends(get_current_user)]
 
 
 # reads the client_id and secret from .env file
@@ -158,6 +166,13 @@ async def ms_auth(request: Request):
 async def logout(request: Request):
     request.session.pop('user', None)
     return RedirectResponse(url='/')
+
+
+@app.get('/user', status_code=status.HTTP_200_OK)
+async def user(user:user_dependency, db:db_dependency):
+    if user is None:
+        raise HTTPException(status_code=401, detail='Authentication Failed') 
+    return {"User": user}
 
 
 if __name__ == '__main__':
