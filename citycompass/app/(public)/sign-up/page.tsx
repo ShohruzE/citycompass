@@ -5,7 +5,7 @@ import Link from "next/link";
 
 export default function SignUpPage() {
   return (
-    <div className="flex flex-col justify-center items-center min-h-screen text-center p-6 bg-background text-foreground">
+    <div className="flex flex-col justify-center items-center min-h-[calc(100vh-64px)] text-center px-6 pt-8 pb-8 bg-background text-foreground">
       <h2 className="text-3xl font-bold mb-4">Create an Account</h2>
       <p className="text-muted-foreground mb-6">
         Join CityCompass to explore data-driven insights about NYC neighborhoods.
