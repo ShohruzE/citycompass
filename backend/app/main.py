@@ -1,11 +1,13 @@
 # The following libraries will allow FastAPI to run, create classes and create exceptions
+from typing import Annotated
 from fastapi import FastAPI
+from pydantic import BaseModel
 
 
 # The three libraries below are used to create a model of the database, create the connection to the database
 # and import the SQL alchemy DB
 from app.models.models import Base
-from app.core.db import engine
+from backend.app.schemas.db import SessionLocal, engine
 from app.api import auth
 
 # All libraries below are used to enable OAuth
