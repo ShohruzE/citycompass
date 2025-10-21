@@ -4,9 +4,9 @@ from fastapi import FastAPI
 
 # The three libraries below are used to create a model of the database, create the connection to the database
 # and import the SQL alchemy DB
-from app.models.models import Base
-from app.core.db import engine
-from app.api import auth
+from models.models import Base
+from core.db import engine
+from api import auth
 
 # All libraries below are used to enable OAuth
 from starlette.middleware.sessions import SessionMiddleware
