@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from typing import Annotated
 
 # connect to Postgres Database and read JSON from responses
-from backend.app.schemas.db import get_db
+from schemas.db import get_db
 from pydantic import BaseModel
 from starlette.config import Config
 from authlib.integrations.starlette_client import OAuth, OAuthError
