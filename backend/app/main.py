@@ -1,6 +1,7 @@
 # The following libraries will allow FastAPI to run, create classes and create exceptions
 import json
 from fastapi import FastAPI, Depends, HTTPException, Request
+from starlette import status
 from pydantic import BaseModel
 from typing import List, Annotated
 
@@ -45,6 +46,7 @@ def get_db():
 
 #  #document_further
 db_dependency = Annotated[Session, Depends(get_db)]
+user_dependency = Annotated[dict, Depends(auth.get_current_user)]
 
 
 # reads the client_id and secret from .env file
@@ -87,7 +89,11 @@ async def homepage(request: Request):
         return HTMLResponse(html)
     return HTMLResponse('<a href="/google-login">google-login</a><br><a href="/ms-login">ms-login</a>')
 
-
+@app.get('/user', status_code=status.HTTP_200_OK)
+async def user(user:user_dependency, db:db_dependency):
+    if user is None:
+        raise HTTPException(status_code=401, detail='Authentication Failed') 
+    return {"User": user}
 # # Register route takes JSON information and saves it to the DB. Uses UserBase to validate items are the right type
 # @app.post("/register")
 # async def register_user(user: UserBase, db: db_dependency):

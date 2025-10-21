@@ -28,7 +28,7 @@ from jose import jwt, JWTError
 # Config file reads environment file
 from dotenv import load_dotenv
 import os
-
+ 
 router = APIRouter(
     prefix='/auth',
     tags=['auth']
@@ -195,6 +195,17 @@ async def create_user(db:db_dependency,
     db.add(create_user_model)
     db.commit()
 
+# create token function 
+@router.post("/token", response_model=Token)
+async def login_for_access_token(form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
+        db:db_dependency):
+        user = authenticate_user(form_data.username, form_data.password, db)
+        if not user:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
+                                detail='Could not validate user.')
+        token = create_access_token(user.username, user.id, timedelta(minutes=30))
+        return {'access_token':token, 'token_type':'bearer'}
+
 @router.post("/login", response_model=Token)
 async def login_for_access_token(form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
         db:db_dependency):
@@ -207,6 +218,8 @@ async def login_for_access_token(form_data: Annotated[OAuth2PasswordRequestForm,
 
 def authenticate_user(username:str, password:str, db):
     user = db.query(Users).filter(Users.username == username).first()
+    print(username)
+    # print ("found user?:" ,user)
     if not user:
         return False
     if not bcrypt_context.verify(password, user.password):
