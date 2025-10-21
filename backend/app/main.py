@@ -7,7 +7,7 @@ from sqlalchemy import Engine
 
 # The three libraries below are used to create a model of the database, create the connection to the database
 # and import the SQL alchemy DB
-from api.auth import auth
+import api.auth
 from schemas.db import SessionLocal
 import models.models as models
 from sqlalchemy.orm import Session 

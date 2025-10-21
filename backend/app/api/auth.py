@@ -10,7 +10,7 @@ from starlette.config import Config
 from authlib.integrations.starlette_client import OAuth, OAuthError
 from starlette.responses import HTMLResponse, RedirectResponse
 import json
-from app.models import models
+from models import models
 
 # All libraries used to support JWT & auth routes
 from datetime import timedelta, datetime
