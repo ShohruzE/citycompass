@@ -1,26 +1,17 @@
 # The following libraries will allow FastAPI to run, create classes and create exceptions
-from fastapi import FastAPI, Depends, HTTPException
+import json
+from fastapi import FastAPI, Depends, HTTPException, Request
 from pydantic import BaseModel
 from typing import List, Annotated
 
-from sqlalchemy import Engine
+# from sqlalchemy import Engine
+from sqlalchemy.orm import Session
 
 # The three libraries below are used to create a model of the database, create the connection to the database
 # and import the SQL alchemy DB
-import api.auth
-from schemas.db import SessionLocal
-import models.models as models
-from sqlalchemy.orm import Session 
-
-# All packages below are used for Middleware & API responses 
-# JSON package to parse the JSON response recieved by the server
-import json
-# Import fastapi
-from fastapi import FastAPI
-# Config file reads environment file
-from starlette.config import Config
-# libraries and functions needed to recieve requests from server and to redirect to another route
-from starlette.requests import Request
+from models.models import Base
+from schemas.db import SessionLocal, engine
+from api import auth
 
 # All libraries below are used to enable OAuth
 from starlette.middleware.sessions import SessionMiddleware
@@ -32,7 +23,9 @@ app = FastAPI()
 
 app.include_router(auth.router)
 # #document_further
-models.Base.metadata.create_all(bind=Engine)
+# models.Base.metadata.create_all(bind=engine)
+Base.metadata.create_all(bind=engine)
+
 # Adds session Middleware #document_further
 app.add_middleware(SessionMiddleware, secret_key="!secret")
 
@@ -55,8 +48,8 @@ db_dependency = Annotated[Session, Depends(get_db)]
 
 
 # reads the client_id and secret from .env file
-config = Config('.env')
-oauth = OAuth(config)
+# config = Config('.env')
+# oauth = OAuth(config)
 
 
 # GOOGLE_CONF_URL = 'https://accounts.google.com/.well-known/openid-configuration'

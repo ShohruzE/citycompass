@@ -1,6 +1,7 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from functools import lru_cache
 import secrets
+import secrets
 
 class Settings(BaseSettings):
     database_url: str
@@ -9,6 +10,12 @@ class Settings(BaseSettings):
     GOOGLE_CLIENT_SECRET: str
     MICROSOFT_CLIENT_ID: str
     MICROSOFT_CLIENT_SECRET: str
+
+    # Add a secret key for session middleware
+    SECRET_KEY: str = secrets.token_hex(32)
+
+    # Add a secret key for session middleware
+    SECRET_KEY: str = secrets.token_hex(32)
 
     # document further
     SECRET_KEY: str = secrets.token_hex(32)
