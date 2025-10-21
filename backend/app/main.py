@@ -1,29 +1,15 @@
 # The following libraries will allow FastAPI to run, create classes and create exceptions
-from fastapi import FastAPI, Depends, HTTPException
-from pydantic import BaseModel
-from typing import List, Annotated
+from fastapi import FastAPI
+
 
 # The three libraries below are used to create a model of the database, create the connection to the database
 # and import the SQL alchemy DB
-import models.models as models
-from schemas.database import engine, SessionLocal
-from sqlalchemy.orm import Session 
-
-# All packages below are used for Middleware & API responses 
-# JSON package to parse the JSON response recieved by the server
-import json
-# Import fastapi
-from fastapi import FastAPI
-# Config file reads environment file
-from starlette.config import Config
-# libraries and functions needed to recieve requests from server and to redirect to another route
-from starlette.requests import Request
+from app.models.models import Base
+from app.core.db import engine
+from app.api import auth
 
 # All libraries below are used to enable OAuth
 from starlette.middleware.sessions import SessionMiddleware
-from starlette.responses import HTMLResponse, RedirectResponse
-#  Authlib allows us to use OAuth to authenticate users using popular services like MS and Google
-from authlib.integrations.starlette_client import OAuth, OAuthError
 
 import auth
 from auth import get_current_user
@@ -34,7 +20,7 @@ app = FastAPI()
 
 app.include_router(auth.router)
 # #document_further
-models.Base.metadata.create_all(bind=engine)
+Base.metadata.create_all(bind=engine)
 # Adds session Middleware #document_further
 app.add_middleware(SessionMiddleware, secret_key="!secret")
 
@@ -54,8 +40,6 @@ def get_db():
 
 #  #document_further
 db_dependency = Annotated[Session, Depends(get_db)]
-
-user_dependency = Annotated[dict, Depends(get_current_user)]
 
 
 # reads the client_id and secret from .env file
@@ -168,13 +152,7 @@ async def logout(request: Request):
     return RedirectResponse(url='/')
 
 
-@app.get('/user', status_code=status.HTTP_200_OK)
-async def user(user:user_dependency, db:db_dependency):
-    if user is None:
-        raise HTTPException(status_code=401, detail='Authentication Failed') 
-    return {"User": user}
-
-
 if __name__ == '__main__':
     import uvicorn
-    uvicorn.run(app, host='127.0.0.1', port=8000)
+
+    uvicorn.run(app, host="127.0.0.1", port=8000)

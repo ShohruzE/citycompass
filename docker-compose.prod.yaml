@@ -1,0 +1,35 @@
+name: citycompass-prod
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - ENV=production
+      - PYTHONPATH=/app
+    restart: unless-stopped
+    networks:
+      - citycompass-network
+
+  frontend:
+    build:
+      context: ./citycompass
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - NEXT_TELEMETRY_DISABLED=1
+      - NEXT_PUBLIC_API_URL=http://localhost:8000
+    restart: unless-stopped
+    networks:
+      - citycompass-network
+    depends_on:
+      - backend
+
+networks:
+  citycompass-network:
+    driver: bridge

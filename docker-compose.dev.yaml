@@ -1,18 +1,87 @@
 name: citycompass-dev
 
 services:
+  db:
+    image: postgres:16-alpine
+    container_name: citycompass-postgres-db-dev
+    environment:
+      - POSTGRES_USER=citycompass
+      - POSTGRES_PASSWORD=citycompass
+      - POSTGRES_DB=citycompass
+    ports:
+      - "5432:5432"
+    volumes:
+      - citycompass-postgres-data:/var/lib/postgresql/data
+    restart: unless-stopped
+    networks:
+      - citycompass-network
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: citycompass-pgadmin-dev
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=admin@citycompass.com
+      - PGADMIN_DEFAULT_PASSWORD=admin
+      - PGADMIN_CONFIG_SERVER_MODE=False
+    ports:
+      - "5050:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    restart: unless-stopped
+    networks:
+      - citycompass-network
+    depends_on:
+      - db
+
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
     ports:
-      - 8000:8000
+      - "8000:8000"
     volumes:
-      # Mount source code for hot reloading
-      - ./backend:/app
-      # Exclude .venv from being mounted (keep container's virtual env)
-      - /app/.venv
+      # Mount only the source code, not the entire directory
+      - ./backend/app:/app/app
+      - ./backend/pyproject.toml:/app/pyproject.toml
+      - ./backend/uv.lock:/app/uv.lock
     environment:
       - PYTHONPATH=/app
       - WATCHFILES_FORCE_POLLING=true
+      - DATABASE_URL=postgresql://citycompass:citycompass@db:5432/citycompass
     restart: unless-stopped
+    networks:
+      - citycompass-network
+    depends_on:
+      - db
+
+  frontend:
+    build:
+      context: ./citycompass
+      dockerfile: Dockerfile.dev
+    ports:
+      - "3000:3000"
+    volumes:
+      # Mount source code for hot reloading
+      - ./citycompass:/app
+      # Exclude node_modules from being mounted
+      - /app/node_modules
+      - /app/.next
+    environment:
+      - NODE_ENV=development
+      - NEXT_TELEMETRY_DISABLED=1
+      - NEXT_PUBLIC_API_URL=http://localhost:8000
+    restart: unless-stopped
+    networks:
+      - citycompass-network
+    depends_on:
+      - backend
+
+volumes:
+  citycompass-postgres-data:
+    driver: local
+  pgadmin_data:
+    driver: local
+
+networks:
+  citycompass-network:
+    driver: bridge
