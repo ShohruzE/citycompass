@@ -6,7 +6,7 @@ from fastapi import FastAPI
 # and import the SQL alchemy DB
 from app.models.models import Base
 from app.core.db import engine
-from app.api import auth
+from app.api import auth, ml
 
 # All libraries below are used to enable OAuth
 from starlette.middleware.sessions import SessionMiddleware
@@ -20,6 +20,7 @@ app.add_middleware(SessionMiddleware, secret_key="!secret")
 
 
 app.include_router(auth.router, prefix="/api")
+app.include_router(ml.router, prefix="/api")
 
 
 if __name__ == "__main__":
