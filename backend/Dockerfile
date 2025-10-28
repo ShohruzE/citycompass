@@ -17,6 +17,9 @@ RUN --mount=type=cache,target=/root/.cache/uv \
     --mount=type=bind,source=uv.lock,target=uv.lock \
     --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
     uv sync --locked --no-install-project --no-dev
+    
+#ML DEPENDENCIES
+RUN pip install --no-cache-dir pandas numpy scikit-learn xgboost seaborn matplotlib joblib
 
 # Then, add the rest of the project source code and install it
 # Installing separately from its dependencies allows optimal layer caching
