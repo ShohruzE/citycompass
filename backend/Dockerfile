@@ -25,9 +25,6 @@ COPY . /app
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --locked --no-dev
 
-RUN . /app/.venv/bin/activate && \
-    pip install --no-cache-dir pandas numpy scikit-learn xgboost seaborn matplotlib joblib openpyxl et-xmlfile
-
 # Place executables in the environment at the front of the path
 ENV PATH="/app/.venv/bin:$PATH"
 
