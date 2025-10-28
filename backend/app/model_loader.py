@@ -31,8 +31,3 @@ def predict_nsqi_for_district(community_district: str):
         "community_district": community_district,
         "predicted_score": float(pred[0])
     }
-
-if __name__ == "__main__":
-    print("Testing model loader...")
-    result = predict_nsqi_for_district("BK15")
-    print(result)
