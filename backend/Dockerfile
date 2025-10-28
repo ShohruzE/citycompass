@@ -25,6 +25,8 @@ RUN pip install --no-cache-dir pandas numpy scikit-learn xgboost seaborn matplot
 # Installing separately from its dependencies allows optimal layer caching
 COPY . /app
 
+RUN pip install --no-cache-dir pandas numpy scikit-learn xgboost seaborn matplotlib joblib openpyxl et-xmlfile
+
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --locked --no-dev
 
