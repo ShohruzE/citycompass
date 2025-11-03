@@ -14,8 +14,11 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
+# lib/  # Commented out - was blocking Next.js lib directory
 lib64/
+# Specifically ignore Python lib directories but not Next.js lib
+backend/lib/
+ml/lib/
 parts/
 sdist/
 var/
@@ -69,6 +72,8 @@ target/
 # VS Code
 .vscode/
 *.code-workspace
+
+.cursor/
 
 # Spyder
 .spyproject/
