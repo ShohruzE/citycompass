@@ -4,6 +4,7 @@ import { GeoJSON, MapContainer } from "react-leaflet";
 import { useEffect, useState } from "react";
 import type { FeatureCollection } from "geojson";
 import { point } from "leaflet";
+import type * as L from "leaflet";
 import "leaflet/dist/leaflet.css"; // important
 
 export default function StaticNYCMap() {
@@ -24,15 +25,15 @@ export default function StaticNYCMap() {
     fillOpacity: 0.85,
   };
 
-  const onEachDistrict = (feature: any, layer: any) => {
+  const onEachDistrict = (feature: GeoJSON.Feature, layer: L.Layer) => {
     const name =
-      feature.properties.cdtaname ||
-      feature.properties.boroname ||
-      feature.properties.cdta2020 ||
+      feature.properties?.cdtaname ||
+      feature.properties?.boroname ||
+      feature.properties?.cdta2020 ||
       "Unknown";
     
     
-    layer.bindTooltip(name, {
+    (layer as L.Path).bindTooltip(name, {
       sticky: true,
       direction: "top",
       offset: point(0, -10),
@@ -42,15 +43,15 @@ export default function StaticNYCMap() {
 
     layer.on({
       mouseover: () => {
-        layer.openTooltip();
-        layer.setStyle({ fillColor: "#3a80ba" });
+        (layer as L.Path).openTooltip();
+        (layer as L.Path).setStyle({ fillColor: "#3a80ba" });
       },
       mouseout: () => {
-        layer.closeTooltip();
-        layer.setStyle({ fillColor: "#7baac8" });
+        (layer as L.Path).closeTooltip();
+        (layer as L.Path).setStyle({ fillColor: "#7baac8" });
       },
       // Prevent tooltip glitching on click
-      mousedown: (e: any) => {
+      mousedown: (e: L.LeafletMouseEvent) => {
         e.originalEvent.preventDefault(); // stops focus/outline
         e.originalEvent.stopPropagation(); // stops re-focusing other polygons
       },
@@ -61,7 +62,10 @@ export default function StaticNYCMap() {
     });
 
     // Disable keyboard focus outline (for accessibility consistency)
-    layer.getElement?.()?.setAttribute("tabindex", "-1");
+    const element = (layer as L.Path).getElement?.();
+    if (element) {
+      element.setAttribute("tabindex", "-1");
+    }
   };
 
   return (

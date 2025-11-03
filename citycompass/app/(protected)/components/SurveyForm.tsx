@@ -5,12 +5,6 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   surveyFormSchema,
-  personalInfoSchema,
-  safetySecuritySchema,
-  cleanlinessEnvironmentSchema,
-  foodAmenitiesSchema,
-  financialsSchema,
-  overallFeedbackSchema,
   type SurveyFormData,
 } from "@/lib/schemas/survey";
 import { submitSurvey } from "@/lib/actions/survey";
@@ -85,9 +79,10 @@ export function SurveyForm() {
   useEffect(() => {
     if (Object.keys(savedData).length > 0) {
       Object.entries(savedData).forEach(([key, value]) => {
-        form.setValue(key as keyof SurveyFormData, value as any);
+        form.setValue(key as keyof SurveyFormData, value as never);
       });
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Save form data to localStorage on any change
@@ -96,7 +91,8 @@ export function SurveyForm() {
       setSavedData(value as Partial<SurveyFormData>);
     });
     return () => subscription.unsubscribe();
-  }, [form.watch]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const validateStep = async () => {
     let isValid = false;
@@ -199,7 +195,7 @@ export function SurveyForm() {
         // Success - clear saved data
         clearSavedData();
       }
-    } catch (error) {
+    } catch {
       setServerError("An unexpected error occurred. Please try again.");
     } finally {
       setIsSubmitting(false);
