@@ -3,13 +3,13 @@ from sqlalchemy.orm import Session
 from typing import Annotated
 
 
-from app.core.db import get_db
+from core.db import get_db
 from pydantic import BaseModel
 from starlette.config import Config
 from authlib.integrations.starlette_client import OAuth, OAuthError
 from starlette.responses import HTMLResponse, RedirectResponse
 import json
-from app.models import models
+from models import models
 
 
 router = APIRouter(prefix="/auth")
