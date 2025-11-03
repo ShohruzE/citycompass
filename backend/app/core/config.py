@@ -11,12 +11,6 @@ class Settings(BaseSettings):
     MICROSOFT_CLIENT_ID: str
     MICROSOFT_CLIENT_SECRET: str
 
-    # Add a secret key for session middleware
-    SECRET_KEY: str = secrets.token_hex(32)
-
-    # Add a secret key for session middleware
-    SECRET_KEY: str = secrets.token_hex(32)
-
     # document further
     SECRET_KEY: str = secrets.token_hex(32)
     # To read env variables from .env file
