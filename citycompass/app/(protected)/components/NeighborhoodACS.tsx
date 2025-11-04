@@ -2,8 +2,19 @@
 
 import { useState, useEffect } from "react";
 
+type ACSEntry = {
+  zcta: string;
+  name: string;
+  total_population?: number | null;
+  median_household_income?: number | null;
+  median_age?: number | null;
+  poverty_count?: number | null;
+  poverty_total?: number | null;
+  poverty_rate?: number | null;
+};
+
 export default function NeighborhoodACS({ zip = "10001" }: { zip?: string }) {
-  const [data, setData] = useState<any>(null);
+  const [data, setData] = useState<ACSEntry | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   useEffect(() => {
