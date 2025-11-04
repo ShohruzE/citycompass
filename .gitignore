@@ -73,6 +73,8 @@ target/
 .vscode/
 *.code-workspace
 
+.cursor/
+
 # Spyder
 .spyproject/
 

@@ -1,7 +1,7 @@
 "use server";
 
-import { redirect } from "next/navigation";
-import { surveyFormSchema, type SurveyFormData } from "../schemas";
+import { revalidatePath } from "next/cache";
+import { surveyFormSchema, type SurveyFormData } from "../schemas/survey";
 
 export async function submitSurvey(formData: SurveyFormData) {
   // Nextjs server-side validation
@@ -14,30 +14,21 @@ export async function submitSurvey(formData: SurveyFormData) {
     };
   }
 
-  const { name, email, age, city, feedback, rating } = validatedFields.data;
+  const data = validatedFields.data;
 
   try {
-    // Send the data to the FastAPI backend
+    // Send the complete survey data to the FastAPI backend
     const response = await fetch(`${process.env.API_BASE_URL}/api/survey`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        name,
-        email,
-        age,
-        city,
-        feedback,
-        rating,
-      }),
+      body: JSON.stringify(data),
     });
-
     if (!response.ok) {
       throw new Error("Failed to submit survey");
     }
-
-    redirect("/survey/success");
+    revalidatePath("/survey");
   } catch (error) {
     console.error("Error submitting survey:", error);
     return {
