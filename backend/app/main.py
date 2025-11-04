@@ -15,7 +15,7 @@ from sqlalchemy.orm import Session
 # and import the SQL alchemy DB
 from app.models.models import Base
 from app.core.db import SessionLocal, engine
-from app.api import auth, ml
+from app.api import auth, ml, acs
 
 # All libraries below are used to enable OAuth
 from starlette.middleware.sessions import SessionMiddleware
@@ -61,8 +61,7 @@ user_dependency = Annotated[dict, Depends(auth.get_current_user)]
 
 app.include_router(auth.router, prefix="/api")
 app.include_router(ml.router, prefix="/api")
-
-
+app.include_router(acs.router, prefix="/api")
 # root will determine if a user session has been saved, if not it shows a link to to the login route
 @app.get("/")
 async def homepage(request: Request):

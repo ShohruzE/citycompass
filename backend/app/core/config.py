@@ -10,6 +10,7 @@ class Settings(BaseSettings):
     GOOGLE_CLIENT_SECRET: str
     MICROSOFT_CLIENT_ID: str
     MICROSOFT_CLIENT_SECRET: str
+    ACS_API_KEY: str
 
     # document further
     SECRET_KEY: str = secrets.token_hex(32)
