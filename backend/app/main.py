@@ -25,17 +25,21 @@ from authlib.integrations.starlette_client import OAuth, OAuthError
 # initialize FastAPI App
 app = FastAPI()
 
-app.include_router(auth.router)
-# #document_further
-# models.Base.metadata.create_all(bind=engine)
-Base.metadata.create_all(bind=engine)
+
 
 # Adds session Middleware #document_further
 app.add_middleware(SessionMiddleware, secret_key="!secret")
 
 # allow all origins to communicate with backend
 origins = [
-    "*"
+    "http://localhost:3000",
+    "http://127.0.0.1:8000",
+    "http://172.24.144.1:3000",
+    "http://localhost:5173",  # Add Vite port if using Vite
+    "http://127.0.0.1:5173",
+    "http://172.24.144.1",
+    "http://172.20.208.1:3000",
+    "http://172.20.208.1" # Add all potential frontend URLs
 ]
 
 app.add_middleware(
@@ -44,7 +48,13 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["*"],
 )
+
+app.include_router(auth.router)
+# #document_further
+# models.Base.metadata.create_all(bind=engine)
+Base.metadata.create_all(bind=engine)
 
 # Create Model for a user
 class UserBase(BaseModel):
@@ -66,7 +76,7 @@ user_dependency = Annotated[dict, Depends(auth.get_current_user)]
 
 
 
-
+ 
 # root will determine if a user session has been saved, if not it shows a link to to the login route
 @app.get('/')
 async def homepage(request: Request):

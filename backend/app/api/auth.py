@@ -57,6 +57,10 @@ class CreateUserRequest(BaseModel):
     username: str
     password: str
 
+class UserLoginRequest(BaseModel):
+    username: str
+    password: str
+
 class Token(BaseModel):
     access_token: str
     token_type: str
@@ -157,10 +161,10 @@ async def google_auth(request: Request, db:db_dependency):
             print(db_user.id)
     except HTTPException:
         print("error")
-        print(error)
+        # print(error)
 
     token = create_access_token(user.email, db_user.id, timedelta(minutes=30))
-    response = RedirectResponse(url="http://localhost:5173/home")
+    response = RedirectResponse(url="http://localhost:3000/dashboard")
  
     response.set_cookie(
         
@@ -178,7 +182,7 @@ async def google_auth(request: Request, db:db_dependency):
 
 # This route receives a token from Microsoft verifying access to app, then redirects user to root
 @router.get("/ms-auth")
-async def ms_auth(request: Request):
+async def ms_auth(request: Request, db: db_dependency):
     try:
         # Get the token without automatic userinfo parsing
         token = await oauth.microsoft.authorize_access_token(request)
@@ -197,15 +201,55 @@ async def ms_auth(request: Request):
             "given_name": user_data.get("givenName"),
             "family_name": user_data.get("surname"),
         }
-
     except OAuthError as error:
-        return HTMLResponse(f"<h1>OAuth Error: {error.error}</h1>")
+        return RedirectResponse(
+                url="http://localhost:3000/sign-in?error=auth_failed"
+            )
+        # return HTMLResponse(f"<h1>OAuth Error: {error.error}</h1>")
     except Exception as error:
-        return HTMLResponse(f"<h1>Error: {str(error)}</h1>")
+        return RedirectResponse(
+                url="http://localhost:3000/sign-in?error=ms_server_error"
+            )
+        # return HTMLResponse(f"<h1>Error: {str(error)}</h1>")
 
-    if user:
-        request.session["user"] = user
-    return RedirectResponse(url="/")
+    try:
+        db_user = authenticate_sso_user(user["email"], db)
+        print("db_user: ",db_user)
+        if db_user == False:
+            return RedirectResponse(
+                url=f"http://localhost:3000/sign-up?email={user['email']}&oauth=microsoft"
+            )
+        else:
+            print(db_user.id)
+    except Exception as error:
+        print(f"OAuth error: {str(error)}")
+        return RedirectResponse("http://localhost:3000/sign-up?error=server_error")
+    except error:
+    # print("error")
+        print(error)
+
+    token = create_access_token(user["email"], db_user.id, timedelta(minutes=30))
+    response = RedirectResponse(url="http://localhost:3000/dashboard")
+ 
+    response.set_cookie(
+        
+        'access_token',
+        token,
+        expires= timedelta(minutes=30),
+        path="/",
+        domain="localhost",
+        httponly=False,  # Can't be accessed by JavaScript (more secure)
+        secure=False,    # Only sent over HTTPS (use False in development)
+        samesite='Lax',
+    )
+    
+    return response
+
+    # if user:
+    #     request.session["user"] = user
+    # return RedirectResponse(url="http://localhost:3000/dashboard")
+
+
 
 
 # removes user information and redirects back to the root
@@ -235,10 +279,10 @@ async def create_user(db:db_dependency, create_user_request: CreateUserRequest):
         valid_password = create_user_request.password
         valid_password = is_valid_password(valid_password)
         valid_username = is_valid_username(create_user_request.username)
-        if (valid_password != False):
+        if (valid_password == False):
             raise HTTPException(status_code=400, detail="invalid password")
         
-        if (valid_username != False):
+        if (valid_username == False):
             raise HTTPException(status_code=400, detail="invalid username")
         # print('passed username and email')
         # db_new_user = models.Users(email = create_user_request.username, password = valid_password)
@@ -260,6 +304,46 @@ def create_jwt_token(username, id):
     token = create_access_token(username, id, timedelta(minutes=30))
     return token
 
+@router.post("/test")
+async def test():
+    return {"message": "CORS works!"}
+
+@router.post("/email-auth")
+async def email_login(db:db_dependency, user_login_request: UserLoginRequest):
+    
+    try:
+        # db_user = (user.email, db) 
+        db_user = authenticate_user(user_login_request.username, user_login_request.password, db)
+        print("db_user: ",db_user)
+        if db_user==False:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
+                                detail='Could not validate user.')
+        else:
+            print(db_user.id)
+    except Exception as error:
+        # print("error")
+        print(error)
+
+    token = create_access_token(db_user.email, db_user.id, timedelta(minutes=30))
+    response = JSONResponse(content={
+        "message": "Login successful",
+        "user": user_login_request.username,
+        # Include any other user data you need
+    })
+    
+    # Set the cookie on the response
+    response.set_cookie(
+        'access_token',
+        token,  # Your generated token
+        expires=timedelta(minutes=30),
+        path="/",
+        domain="localhost",
+        httponly=False,
+        secure=False,
+        samesite='Lax',
+    )
+    
+    return response
 
 @router.post("/token", response_model=Token)
 async def login_for_access_token(form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
