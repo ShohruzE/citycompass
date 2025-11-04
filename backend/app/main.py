@@ -1,5 +1,6 @@
 # The following libraries will allow FastAPI to run, create classes and create exceptions
 import json
+import os
 from fastapi import FastAPI, Depends, HTTPException, Request
 from starlette import status
 from pydantic import BaseModel
@@ -28,7 +29,14 @@ app = FastAPI()
 
 
 # Adds session Middleware #document_further
-app.add_middleware(SessionMiddleware, secret_key="!secret")
+SECRET_KEY = os.getenv('SECRET_KEY') 
+app.add_middleware(
+    SessionMiddleware,
+    secret_key=SECRET_KEY,
+    session_cookie="session",
+    max_age=3600,
+    same_site="lax",  # Important!
+    https_only=False, )
 
 # allow all origins to communicate with backend
 origins = [
@@ -39,16 +47,17 @@ origins = [
     "http://127.0.0.1:5173",
     "http://172.24.144.1",
     "http://172.20.208.1:3000",
-    "http://172.20.208.1" # Add all potential frontend URLs
+    "http://172.20.208.1", # Add all potential frontend URLs
+    "https://citycompass.vercel.app"
 ]
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
-    expose_headers=["*"],
+    expose_headers=["Content-Type", "Authorization"],
 )
 
 app.include_router(auth.router)

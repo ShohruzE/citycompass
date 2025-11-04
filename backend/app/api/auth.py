@@ -1,5 +1,5 @@
 # initial libraries to create basic API routes and errors
-from fastapi import APIRouter, Depends, Request 
+from fastapi import APIRouter, Depends, Request, Response 
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 from typing import Annotated
@@ -110,18 +110,6 @@ async def homepage(request: Request):
     return HTMLResponse(
         '<a href="/google-login">google-login</a><br><a href="/ms-login">ms-login</a>'
     )
-
-
-# Register route takes JSON information and saves it to the DB. Uses UserBase to validate items are the right type
-# @router.post("/register")
-# async def register_user(user: UserBase, db: db_dependency):
-#     db_new_user = models.Users(
-#         email=user.email, password=user.password
-#     )
-#     db.add(db_new_user)
-#     db.commit()
-#     db.refresh(db_new_user)
-#     db.commit()
 
 
 # function below defines the process for logging into google
@@ -269,18 +257,18 @@ async def ms_auth(request: Request, db: db_dependency):
     
     return response
 
-    # if user:
-    #     request.session["user"] = user
-    # return RedirectResponse(url="http://localhost:3000/dashboard")
-
-
-
-
 # removes user information and redirects back to the root
 @router.get("/logout")
-async def logout(request: Request):
+async def logout(request: Request, response: Response):
     request.session.pop("user", None)
-    return RedirectResponse(url="/")
+    response.delete_cookie(
+        key="access_token",  # Your session cookie name
+        path="/",
+        domain="localhost"  # Match your cookie domain
+    )
+    
+    return {"message": "Logged out successfully"}
+    # return RedirectResponse(url="http://localhost:3000")
 
 def is_valid_password(password):
     if len(password) < 8:
@@ -348,24 +336,13 @@ async def email_login(db:db_dependency, user_login_request: UserLoginRequest):
         # print("error")
         print(error)
 
-    token = create_access_token(db_user.email, db_user.id, timedelta(minutes=30))
+    token = create_access_token(db_user.username, db_user.id, timedelta(minutes=30))
     response = JSONResponse(content={
         "message": "Login successful",
         "user": user_login_request.username,
+        "token":token
         # Include any other user data you need
     })
-    
-    # Set the cookie on the response
-    response.set_cookie(
-        'access_token',
-        token,  # Your generated token
-        expires=timedelta(minutes=30),
-        path="/",
-        domain="localhost",
-        httponly=False,
-        secure=False,
-        samesite='Lax',
-    )
     
     return response
 
@@ -457,10 +434,16 @@ def retrieve_payload(token: Annotated[str, Depends(oauth2_bearer)]):
     return payload
 
 async def get_current_user(token: Annotated[str, Depends(oauth2_bearer)]):
+    print(f"Received token: {token[:20]}...")  # Print first 20 chars
+    print(f"SECRET_KEY: {SECRET_KEY[:10]}...")  # Print first 10 chars
+    print(f"ALGORITHM: {ALGORITHM}")
     try:
+        print("23")
         payload = jwt.decode(token, SECRET_KEY , algorithms=[ALGORITHM])
+        print("23")
         username: str = payload.get('sub')
         user_id: int = payload.get('id')
+        print("print Username: ",username)
         if username is None or user_id is None:
             raise HTTPException(status_code =status.HTTP_401_UNAUTHORIZED,
                                 detail='Could not validate user.')

@@ -88,20 +88,13 @@ testing();
 
     if (!response.ok) {
       // Handle HTTP errors (4xx, 5xx)
+      
       const errorData = await response.json().catch(() => ({}));
       throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
     }
 
       const data = await response.json();
-      // console.log('Login successful:', data);
-      
-      // Store token if your backend returns one
-      
-      // localStorage.setItem('token', data.cookie);
-      
-      // Redirect or update UI on success
-      console.log('Cookies after login:', document.cookie);
-
+      localStorage.setItem('token', data.token);
       // Wait a moment then redirect
       setTimeout(() => {
         window.location.href = '/dashboard';
