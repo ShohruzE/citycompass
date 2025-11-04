@@ -6,7 +6,7 @@ from typing import Annotated
 import re
 
 # connect to Postgres Database and read JSON from responses
-from app.schemas.db import get_db
+# from app.schemas.db import get_db
 from pydantic import BaseModel
 from starlette.config import Config
 from authlib.integrations.starlette_client import OAuth, OAuthError
@@ -21,7 +21,8 @@ from fastapi import APIRouter, Depends, HTTPException
 # from pydantic import BaseModel
 # from sqlalchemy.orm import Session
 from starlette import status
-from app.schemas.db import SessionLocal
+# from app.schemas.db import SessionLocal
+from app.core.db import SessionLocal, get_db
 from app.models.models import Users
 from passlib.context import CryptContext
 # document_further
