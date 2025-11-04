@@ -137,6 +137,29 @@ async def ms_login(request: Request):  # Changed function name to avoid conflict
     redirect_uri = request.url_for("ms_auth")  # Fixed: point to ms_auth instead of auth
     return await oauth.microsoft.authorize_redirect(request, redirect_uri)
 
+def create_google_user(user_email: str, db:db_dependency):
+    try: 
+        create_user_model = Users(
+            username = user_email,
+            signin_method = "Google"
+        )
+
+        db.add(create_user_model)
+        db.commit()
+    except Exception as error:
+        print(error)
+
+def create_microsoft_user(user_email: str, db:db_dependency):
+    try: 
+        create_user_model = Users(
+            username = user_email,
+            signin_method = "Microsoft"
+        )
+
+        db.add(create_user_model)
+        db.commit()
+    except Exception as error:
+        print(error)
 
 # This route receives a token from Google verifying access to app, then redirects user to root
 @router.get("/google-auth")
@@ -154,15 +177,17 @@ async def google_auth(request: Request, db:db_dependency):
     # store user id if first time sign up
     try:
         db_user = authenticate_sso_user(user.email, db)
-        if not db_user:
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
-                                detail='Could not validate user.')
+        if db_user == False:
+            create_google_user(user.email,db)
+            db_user = authenticate_sso_user(user.email, db)
+            # raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
+            #                     detail='Could not validate user.')
         else:
             print(db_user.id)
     except HTTPException:
         print("error")
         # print(error)
-
+    print(db_user)
     token = create_access_token(user.email, db_user.id, timedelta(minutes=30))
     response = RedirectResponse(url="http://localhost:3000/dashboard")
  
@@ -216,9 +241,8 @@ async def ms_auth(request: Request, db: db_dependency):
         db_user = authenticate_sso_user(user["email"], db)
         print("db_user: ",db_user)
         if db_user == False:
-            return RedirectResponse(
-                url=f"http://localhost:3000/sign-up?email={user['email']}&oauth=microsoft"
-            )
+            create_microsoft_user(user["email"],db)
+            db_user = authenticate_sso_user(user["email"], db)
         else:
             print(db_user.id)
     except Exception as error:
@@ -401,11 +425,25 @@ def decrypt_user_password(user_password: str, test_password: str):
     return bcrypt_context.verify(test_password, user_password)
 
 def authenticate_sso_user(username:str, db):
+    # Query for user by username
     user = db.query(Users).filter(Users.username == username).first()
-    print(username)
-    # print ("found user?:" ,user)
-    if not user:
+
+    # Debug logging
+    print(f"User lookup for '{username}': {'Found' if user else 'Not found'}")
+    if user:
+        print(f"  - Email: {user.username}")
+        print(f"  - Sign-in method: {user.signin_method}")
+
+    # Validation checks
+    if user is None:
+        print("❌ Authentication failed: User does not exist")
         return False
+
+    if user.signin_method not in ["Google", "Microsoft"]:
+        print(f"❌ Authentication failed: Invalid sign-in method '{user.signin_method}'. Expected 'Google' or 'Microsoft'")
+        return False
+
+    print("✅ User authenticated successfully")
     return user
 
 def create_access_token(username:str, user_id:int, expires_delta:timedelta):

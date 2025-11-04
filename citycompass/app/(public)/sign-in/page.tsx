@@ -124,7 +124,7 @@ testing();
       </p>
 
       <div className="flex flex-col gap-3 w-full max-w-sm">
-        <form action={handleEmailSignIn} >
+        <form action={handleEmailSignIn} className="flex flex-col gap-3 w-full max-w-sm" >
           <input
             type="email"
             name="email"

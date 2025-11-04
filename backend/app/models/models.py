@@ -11,3 +11,4 @@ class Users(Base):
     email = Column(String)
     username = Column(String)
     password = Column(String)
+    signin_method = Column(String)
