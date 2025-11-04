@@ -1,14 +1,20 @@
 # backend/app/model_loader.py
+import sys
 from pathlib import Path
 import pandas as pd
 import numpy as np
 import joblib
+
+# Add project root to Python path
+ROOT_DIR = Path(__file__).resolve().parent.parent.parent
+sys.path.insert(0, str(ROOT_DIR))
+
 from ml.pipeline.preprocess import build_furman_dataset
 
 # ----------------------------------------------------------
 # Load model bundle
 # ----------------------------------------------------------
-MODEL_PATH = Path("ml/artifacts/nsqi_model.pkl")
+MODEL_PATH = ROOT_DIR / "ml" / "artifacts" / "nsqi_model.pkl"
 print("🔹 Loading trained NSQI model...")
 model_bundle = joblib.load(MODEL_PATH)
 print("Model loaded successfully.")
@@ -23,15 +29,14 @@ grade_thresholds = model_bundle.get("grade_thresholds", {})
 # Load dataset once and clean
 # ----------------------------------------------------------
 print("🔹 Building Furman dataset for inference...")
-furman_df = build_furman_dataset()
+DATA_FOLDER = ROOT_DIR / "ml" / "data" / "raw"
+furman_df = build_furman_dataset(folder=DATA_FOLDER)
 print(f"Dataset loaded: {furman_df.shape}")
 
 furman_df["community_district"] = (
-    furman_df["community_district"]
-    .astype(str)
-    .str.replace(" ", "")
-    .str.strip()
+    furman_df["community_district"].astype(str).str.replace(" ", "").str.strip()
 )
+
 
 # ----------------------------------------------------------
 # Predict function
@@ -65,5 +70,5 @@ def predict_nsqi_for_district(community_district: str):
         "community_district": community_district,
         "predicted_score": float(pred),
         "percentile": round(float(percentile), 2),
-        "grade": grade
+        "grade": grade,
     }
