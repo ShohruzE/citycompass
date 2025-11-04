@@ -73,9 +73,6 @@ def get_db():
 #  #document_further
 db_dependency = Annotated[Session, Depends(get_db)]
 user_dependency = Annotated[dict, Depends(auth.get_current_user)]
-
-
-
  
 # root will determine if a user session has been saved, if not it shows a link to to the login route
 @app.get('/')
