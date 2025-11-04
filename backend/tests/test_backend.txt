@@ -1,0 +1,174 @@
+
+import json
+from fastapi import HTTPException
+import pytest
+from app.api import auth
+from app.schemas.db import SessionLocal
+
+# Future update will use faker to generate new emails each time
+
+class TestUser:
+    username = "test123@gmail.com"
+    password = "test123"
+
+mock_user = auth.CreateUserRequest(
+        username=TestUser.username, 
+        password=TestUser.password
+    )
+
+# class test_login_signup:
+
+# function below defines the process for logging into google
+# @router.get("/google-login")
+# async def login(request: Request):
+
+
+# # function below defines the process for logging into microsoft
+# @router.get("/ms-login")
+# async def ms_login(request: Request):  # Changed function name to avoid conflict
+
+# # removes user information and redirects back to the root
+# @router.get("/logout")
+# async def logout(request: Request):
+
+
+class TestLoginSignup:
+
+    def test_create_short_password(self, client):
+        """Test that password must be 8 characters long"""
+        mock_user = auth.CreateUserRequest(
+            username=TestUser.username, 
+            password=TestUser.password
+        )
+        
+        response = client.post('/auth/register', json=mock_user)
+        assert response.status_code == 400
+
+    def test_create_password_no_letters(self, client):
+        """Test that the password for a new user must contain at least one character"""
+        mock_user = auth.CreateUserRequest(
+            username=TestUser.username, 
+            password="1234567890"
+        )
+        response = client.post('/auth/register', json=mock_user)
+        assert response.status_code == 400
+
+
+    def test_create_password_no_numbers(self, client):
+        """Test that the password for a new user must contain at least one number"""
+        mock_user = auth.CreateUserRequest(
+            username=TestUser.username, 
+            password="ascberihpk"
+        )
+        response = client.post('/auth/register', json=mock_user)
+        assert response.status_code == 400
+    
+    def test_create_user_endpoint(self, client, db_session):
+        """Test the /register endpoint"""
+        
+        user_data = {
+            "username": TestUser.username,
+            "password": TestUser.password
+        }
+
+        response = client.post('/auth/register', json=user_data)
+
+        assert response.status_code == 201 or 400
+
+    
+    def test_create_duplicate_user(self, client, db_session):
+        """Test that creating duplicate user fails"""
+        user_data = {
+            "username": TestUser.username,
+            "password": TestUser.password
+        }
+        
+        # # Create user first time
+        # response1 = client.post("/register", json=user_data)
+        # assert response1.status_code == 201
+        
+        # Try to create same user again
+        response = client.post("/auth/register", json=user_data)
+        assert response.status_code == 400  # based on my error handling
+        
+
+# test Class authorization & encryption - token creation & authorization, test password encryption?
+#     async def authenticate_token(token: Annotated[str, Depends(oauth2_bearer)]):
+
+# auth.create_access_token(username:str, user_id:int, expires_delta:timedelta(30))
+
+# @router.get("/verify-token", response_model=Token)
+# async def verify_token(request: Request,
+
+# create token function 
+# @router.post("/token", response_model=Token)
+# async def login_for_access_token(form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
+
+
+class TestAuthorization:
+
+    # # def authenticate_user(username:str, password:str, db):
+    # def test_authenticate_user(self):
+    #     user_from_db = auth.authenticate_user(test_user.username, test_user.password)
+    #     assert user_from_db
+    
+    def test_create_token(self, client, db_session):
+        """Test the /token endpoint"""
+        
+        user_data = {
+            "username": TestUser.username,
+            "password": TestUser.password
+        }
+        # print(dir(client))
+        # Get token from server
+        token_from_server = client.post('/auth/token', data=user_data)
+        assert token_from_server.status_code == 200  # based on my error handling
+        # print("Response JSON:", token_from_server.json())
+        # Extract the access token from the response
+        token = token_from_server.json()["access_token"]
+
+        # # Make authenticated request with proper Authorization header
+        response = client.get('/user', headers={'Authorization': f'Bearer {token}'})
+        assert response.status_code == 200  # based on my error handling
+
+        print("Response JSON:", response.json())
+        # # Assert the response contains expected fields
+        assert  response.json()["User"]
+
+# @app.get('/user', status_code=status.HTTP_200_OK)
+# async def user(user:user_dependency, db:db_dependency):
+
+
+
+# class test_user_data:
+
+# @app.get('/')
+# async def homepage(request: Request):
+
+
+
+# test class dashboard - "/",
+
+# root will determine if a user session has been saved, if not it shows a link to to the login route
+# @router.get("/")
+# async def homepage(request: Request):
+
+# async def get_current_user(token: Annotated[str, Depends(oauth2_bearer)]):
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+ 

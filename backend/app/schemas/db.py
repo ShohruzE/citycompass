@@ -2,12 +2,12 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
-from .config import get_settings
+from app.core.config import get_settings
 
 
 settings = get_settings()
 DATABASE_URL = settings.database_url
-print(f"Using database URL: {DATABASE_URL}")
+# print(f"Using database URL: {DATABASE_URL}")
 assert DATABASE_URL, "DATABASE_URL not set"
 
 # Create engine with connection pooling

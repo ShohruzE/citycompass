@@ -3,7 +3,6 @@
 import * as React from "react"
 import {Users, BarChart3, MapPin, ArrowRight} from "lucide-react";
 import {Button} from "@/components/ui/button";
-import styles from './HomepageHeroSection.module.css'
 
 const HomepageHeroSection = () =>{
     return (
