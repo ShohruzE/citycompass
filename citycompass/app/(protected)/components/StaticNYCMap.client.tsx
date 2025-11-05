@@ -2,8 +2,9 @@
 
 import { GeoJSON, MapContainer } from "react-leaflet";
 import { useEffect, useState } from "react";
-import type { FeatureCollection } from "geojson";
-import { point } from "leaflet";
+import type { FeatureCollection, Feature } from "geojson";
+import { point, Layer, LeafletMouseEvent } from "leaflet";
+import type L from "leaflet";
 import "leaflet/dist/leaflet.css"; // important
 
 export default function StaticNYCMap() {
@@ -24,14 +25,10 @@ export default function StaticNYCMap() {
     fillOpacity: 0.85,
   };
 
-  const onEachDistrict = (feature: any, layer: any) => {
+  const onEachDistrict = (feature: Feature, layer: Layer) => {
     const name =
-      feature.properties.cdtaname ||
-      feature.properties.boroname ||
-      feature.properties.cdta2020 ||
-      "Unknown";
-    
-    
+      feature.properties?.cdtaname || feature.properties?.boroname || feature.properties?.cdta2020 || "Unknown";
+
     layer.bindTooltip(name, {
       sticky: true,
       direction: "top",
@@ -40,17 +37,20 @@ export default function StaticNYCMap() {
       className: "district-tooltip", // we'll style this next
     });
 
+    // Cast layer to L.Path to access styling methods
+    const pathLayer = layer as L.Path;
+
     layer.on({
       mouseover: () => {
         layer.openTooltip();
-        layer.setStyle({ fillColor: "#3a80ba" });
+        pathLayer.setStyle({ fillColor: "#3a80ba" });
       },
       mouseout: () => {
         layer.closeTooltip();
-        layer.setStyle({ fillColor: "#7baac8" });
+        pathLayer.setStyle({ fillColor: "#7baac8" });
       },
       // Prevent tooltip glitching on click
-      mousedown: (e: any) => {
+      mousedown: (e: LeafletMouseEvent) => {
         e.originalEvent.preventDefault(); // stops focus/outline
         e.originalEvent.stopPropagation(); // stops re-focusing other polygons
       },
@@ -61,7 +61,10 @@ export default function StaticNYCMap() {
     });
 
     // Disable keyboard focus outline (for accessibility consistency)
-    layer.getElement?.()?.setAttribute("tabindex", "-1");
+    const element = pathLayer.getElement?.();
+    if (element) {
+      element.setAttribute("tabindex", "-1");
+    }
   };
 
   return (
@@ -80,13 +83,7 @@ export default function StaticNYCMap() {
           background: "transparent",
         }}
       >
-        {geoData && (
-          <GeoJSON
-            data={geoData}
-            style={() => districtStyle}
-            onEachFeature={onEachDistrict}
-          />
-        )}
+        {geoData && <GeoJSON data={geoData} style={() => districtStyle} onEachFeature={onEachDistrict} />}
       </MapContainer>
     </div>
   );
