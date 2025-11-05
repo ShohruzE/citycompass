@@ -1,5 +1,4 @@
 from fastapi import APIRouter, HTTPException, Query
-from typing import Optional
 import requests
 import time
 
@@ -15,8 +14,9 @@ ACS_VARS = {
     "B19013_001E": "median_household_income",
     "B25077_001E": "median_age",
     "B17001_002E": "poverty_count",
-    "B17001_001E": "poverty_total"
+    "B17001_001E": "poverty_total",
 }
+
 
 # zip code to ACS ZCTA mapping API endpoint
 def _fetch_acs_zcta(zcta: str) -> dict:
@@ -33,18 +33,18 @@ def _fetch_acs_zcta(zcta: str) -> dict:
         return cached["data"]
 
     vars_str = ",".join(ACS_VARS.keys())
-    url = (
-        f"https://api.census.gov/data/2023/acs/acs5?get={vars_str}&for=zip%20code%20tabulation%20area:{zcta}&key={api_key}"
-    )
+    url = f"https://api.census.gov/data/2023/acs/acs5?get={vars_str}&for=zip%20code%20tabulation%20area:{zcta}&key={api_key}"
 
     response = requests.get(url)
 
     if response.status_code != 200:
         raise HTTPException(status_code=502, detail="Failed to fetch data from ACS API")
-    
+
     data = response.json()
     if len(data) < 2:
-        raise HTTPException(status_code=404, detail="No data found for the provided ZCTA")
+        raise HTTPException(
+            status_code=404, detail="No data found for the provided ZCTA"
+        )
 
     header, values = data[0], data[1]
     raw = dict(zip(header, values))
@@ -58,8 +58,11 @@ def _fetch_acs_zcta(zcta: str) -> dict:
         except Exception:
             out[acs_name] = None
 
-    #compute poverty rate
-    if out.get("poverty_count") is not None and out.get("poverty_total") not in (0, None):
+    # compute poverty rate
+    if out.get("poverty_count") is not None and out.get("poverty_total") not in (
+        0,
+        None,
+    ):
         out["poverty_rate"] = out["poverty_count"] / out["poverty_total"]
     else:
         out["poverty_rate"] = None
@@ -68,8 +71,16 @@ def _fetch_acs_zcta(zcta: str) -> dict:
 
     return out
 
+
 @router.get("/neighborhood", summary="Get ACS data for a given neighborhood")
-def neighborhood_stats(zip: str = Query(..., min_length=5, max_length=5, description="The ZIP code to retrieve ACS data for")):
+def neighborhood_stats(
+    zip: str = Query(
+        ...,
+        min_length=5,
+        max_length=5,
+        description="The ZIP code to retrieve ACS data for",
+    ),
+):
     """
     example: /api/acs/neighborhood?zip=90210
     """
