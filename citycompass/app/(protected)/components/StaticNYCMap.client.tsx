@@ -29,6 +29,15 @@ export default function StaticNYCMap() {
     const name =
       feature.properties?.cdtaname || feature.properties?.boroname || feature.properties?.cdta2020 || "Unknown";
 
+    // Extract district ID from properties - try multiple possible fields
+    const districtID =
+      feature.properties?.cdta2020 ||
+      feature.properties?.boro_cd ||
+      feature.properties?.id ||
+      feature.properties?.district_id ||
+      feature.id ||
+      null;
+
     layer.bindTooltip(name, {
       sticky: true,
       direction: "top",
@@ -58,7 +67,7 @@ export default function StaticNYCMap() {
       //   const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, "-");
       //   window.location.href = `/districts/${slug}`;
       // },
-      click: (e: any) => {
+      click: (e: LeafletMouseEvent) => {
         // Check if the district ID exists
         if (!districtID) {
           console.error("No districtID found for this feature", feature);
@@ -70,9 +79,7 @@ export default function StaticNYCMap() {
         layer.bindPopup("Loading prediction...").openPopup(e.latlng);
 
         // Make the API call to your backend
-        fetch(
-          `http://localhost:8000/api/ml/predict?community_district=${districtID}`
-        )
+        fetch(`http://localhost:8000/api/ml/predict?community_district=${districtID}`)
           .then((res) => {
             if (!res.ok) {
               // Handle backend errors (e.g., 404 Not Found, 500 Server Error)
@@ -86,12 +93,8 @@ export default function StaticNYCMap() {
             // --- 3. Format the successful response ---
             // 'data' is your JSON: { score, percentile, grade }
             // Guard against missing/undefined numeric values to avoid runtime errors
-            const scoreText =
-              typeof data?.score === "number" ? data.score.toFixed(2) : "—";
-            const percentileText =
-              typeof data?.percentile === "number"
-                ? `${data.percentile.toFixed(1)}%`
-                : "—";
+            const scoreText = typeof data?.score === "number" ? data.score.toFixed(2) : "—";
+            const percentileText = typeof data?.percentile === "number" ? `${data.percentile.toFixed(1)}%` : "—";
             const gradeText = data?.grade ?? "—";
 
             const popupContent = `
