@@ -2,9 +2,9 @@
 
 import { GeoJSON, MapContainer } from "react-leaflet";
 import { useEffect, useState } from "react";
-import type { FeatureCollection } from "geojson";
-import { point } from "leaflet";
-import type * as L from "leaflet";
+import type { FeatureCollection, Feature } from "geojson";
+import { point, Layer, LeafletMouseEvent } from "leaflet";
+import type L from "leaflet";
 import "leaflet/dist/leaflet.css"; // important
 
 export default function StaticNYCMap() {
@@ -25,16 +25,20 @@ export default function StaticNYCMap() {
     fillOpacity: 0.85,
   };
 
-  const onEachDistrict = (feature: GeoJSON.Feature, layer: L.Layer) => {
+  const onEachDistrict = (feature: Feature, layer: Layer) => {
     const name =
-      feature.properties?.cdtaname ||
-      feature.properties?.boroname ||
+      feature.properties?.cdtaname || feature.properties?.boroname || feature.properties?.cdta2020 || "Unknown";
+
+    // Extract district ID from properties - try multiple possible fields
+    const districtID =
       feature.properties?.cdta2020 ||
-      "Unknown";
+      feature.properties?.boro_cd ||
+      feature.properties?.id ||
+      feature.properties?.district_id ||
+      feature.id ||
+      null;
 
-    const districtID = feature.properties?.cdta2020 || "";
-
-    (layer as L.Path).bindTooltip(name, {
+    layer.bindTooltip(name, {
       sticky: true,
       direction: "top",
       offset: point(0, -10),
@@ -42,17 +46,20 @@ export default function StaticNYCMap() {
       className: "district-tooltip", // we'll style this next
     });
 
+    // Cast layer to L.Path to access styling methods
+    const pathLayer = layer as L.Path;
+
     layer.on({
       mouseover: () => {
-        (layer as L.Path).openTooltip();
-        (layer as L.Path).setStyle({ fillColor: "#3a80ba" });
+        layer.openTooltip();
+        pathLayer.setStyle({ fillColor: "#3a80ba" });
       },
       mouseout: () => {
-        (layer as L.Path).closeTooltip();
-        (layer as L.Path).setStyle({ fillColor: "#7baac8" });
+        layer.closeTooltip();
+        pathLayer.setStyle({ fillColor: "#7baac8" });
       },
       // Prevent tooltip glitching on click
-      mousedown: (e: L.LeafletMouseEvent) => {
+      mousedown: (e: LeafletMouseEvent) => {
         e.originalEvent.preventDefault(); // stops focus/outline
         e.originalEvent.stopPropagation(); // stops re-focusing other polygons
       },
@@ -60,7 +67,7 @@ export default function StaticNYCMap() {
       //   const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, "-");
       //   window.location.href = `/districts/${slug}`;
       // },
-      click: (e: any) => {
+      click: (e: LeafletMouseEvent) => {
         // Check if the district ID exists
         if (!districtID) {
           console.error("No districtID found for this feature", feature);
@@ -72,9 +79,7 @@ export default function StaticNYCMap() {
         layer.bindPopup("Loading prediction...").openPopup(e.latlng);
 
         // Make the API call to your backend
-        fetch(
-          `http://localhost:8000/api/ml/predict?community_district=${districtID}`
-        )
+        fetch(`http://localhost:8000/api/ml/predict?community_district=${districtID}`)
           .then((res) => {
             if (!res.ok) {
               // Handle backend errors (e.g., 404 Not Found, 500 Server Error)
@@ -88,12 +93,8 @@ export default function StaticNYCMap() {
             // --- 3. Format the successful response ---
             // 'data' is your JSON: { score, percentile, grade }
             // Guard against missing/undefined numeric values to avoid runtime errors
-            const scoreText =
-              typeof data?.score === "number" ? data.score.toFixed(2) : "—";
-            const percentileText =
-              typeof data?.percentile === "number"
-                ? `${data.percentile.toFixed(1)}%`
-                : "—";
+            const scoreText = typeof data?.score === "number" ? data.score.toFixed(2) : "—";
+            const percentileText = typeof data?.percentile === "number" ? `${data.percentile.toFixed(1)}%` : "—";
             const gradeText = data?.grade ?? "—";
 
             const popupContent = `
@@ -121,7 +122,7 @@ export default function StaticNYCMap() {
     });
 
     // Disable keyboard focus outline (for accessibility consistency)
-    const element = (layer as L.Path).getElement?.();
+    const element = pathLayer.getElement?.();
     if (element) {
       element.setAttribute("tabindex", "-1");
     }
@@ -143,13 +144,7 @@ export default function StaticNYCMap() {
           background: "transparent",
         }}
       >
-        {geoData && (
-          <GeoJSON
-            data={geoData}
-            style={() => districtStyle}
-            onEachFeature={onEachDistrict}
-          />
-        )}
+        {geoData && <GeoJSON data={geoData} style={() => districtStyle} onEachFeature={onEachDistrict} />}
       </MapContainer>
     </div>
   );

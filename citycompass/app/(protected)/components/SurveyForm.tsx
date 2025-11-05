@@ -3,10 +3,7 @@
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import {
-  surveyFormSchema,
-  type SurveyFormData,
-} from "@/lib/schemas/survey";
+import { surveyFormSchema, type SurveyFormData } from "@/lib/schemas/survey";
 import { submitSurvey } from "@/lib/actions/survey";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -79,11 +76,10 @@ export function SurveyForm() {
   useEffect(() => {
     if (Object.keys(savedData).length > 0) {
       Object.entries(savedData).forEach(([key, value]) => {
-        form.setValue(key as keyof SurveyFormData, value as never);
+        form.setValue(key as keyof SurveyFormData, value as SurveyFormData[keyof SurveyFormData]);
       });
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [savedData, form]);
 
   // Save form data to localStorage on any change
   useEffect(() => {
@@ -91,8 +87,7 @@ export function SurveyForm() {
       setSavedData(value as Partial<SurveyFormData>);
     });
     return () => subscription.unsubscribe();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [form, setSavedData]);
 
   const validateStep = async () => {
     let isValid = false;
