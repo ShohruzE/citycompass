@@ -3,16 +3,7 @@
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import {
-  surveyFormSchema,
-  personalInfoSchema,
-  safetySecuritySchema,
-  cleanlinessEnvironmentSchema,
-  foodAmenitiesSchema,
-  financialsSchema,
-  overallFeedbackSchema,
-  type SurveyFormData,
-} from "@/lib/schemas/survey";
+import { surveyFormSchema, type SurveyFormData } from "@/lib/schemas/survey";
 import { submitSurvey } from "@/lib/actions/survey";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -85,10 +76,10 @@ export function SurveyForm() {
   useEffect(() => {
     if (Object.keys(savedData).length > 0) {
       Object.entries(savedData).forEach(([key, value]) => {
-        form.setValue(key as keyof SurveyFormData, value as any);
+        form.setValue(key as keyof SurveyFormData, value as SurveyFormData[keyof SurveyFormData]);
       });
     }
-  }, []);
+  }, [savedData, form]);
 
   // Save form data to localStorage on any change
   useEffect(() => {
@@ -96,7 +87,7 @@ export function SurveyForm() {
       setSavedData(value as Partial<SurveyFormData>);
     });
     return () => subscription.unsubscribe();
-  }, [form.watch]);
+  }, [form, setSavedData]);
 
   const validateStep = async () => {
     let isValid = false;
@@ -199,7 +190,7 @@ export function SurveyForm() {
         // Success - clear saved data
         clearSavedData();
       }
-    } catch (error) {
+    } catch {
       setServerError("An unexpected error occurred. Please try again.");
     } finally {
       setIsSubmitting(false);

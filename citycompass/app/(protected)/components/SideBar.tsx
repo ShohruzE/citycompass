@@ -11,6 +11,7 @@ import {
   FileText,
   Info,
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 const navItems = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
@@ -23,6 +24,47 @@ const navItems = [
 
 export default function SideBar() {
   const pathname = usePathname();
+
+  function logoutUser(){
+    localStorage.removeItem('token');
+    window.location.href = 'http://localhost:3000/'; // or use Next.js router
+  }   
+
+  async function retrieveUserProfile(){
+    try {
+      // 
+
+      // Retrieve token for API calls
+      const token = localStorage.getItem('token')?.trim();
+      console.log('Token length:', token?.length);
+      console.log('First char:', token?.[0]);
+      console.log('Last char:', token?.[token.length - 1]);
+      console.log(token);
+      const backendURL = 'http://127.0.0.1:8000/user';
+
+      const response = await fetch(backendURL, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      console.log(response);  
+      if (response.ok) {
+        const userData = await response.json();
+        console.log('User data:', userData);
+        return userData;
+        // Clear any client-side state/storage
+        // Redirect or update UI
+        // window.location.href = 'http://localhost:3000/'; // or use Next.js router
+      } else {
+        console.error('Logout failed:', response.status);
+      }
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
+  }
+
 
   return (
     <aside className="fixed left-0 top-0 z-20 h-full w-60 bg-sidebar border-r border-sidebar-border flex flex-col justify-between text-sidebar-foreground">
@@ -61,9 +103,15 @@ export default function SideBar() {
       {/* Footer / Language */}
       <div className="p-4 text-xs flex justify-between items-center border-t border-sidebar-border text-muted-foreground">
         <span>🌐 EN</span>
-        <Link href="/profile" className="hover:text-sidebar-primary">
+        <Button onClick={logoutUser}  className="btn-primary">
+          Logout
+        </Button>
+        <Button onClick={retrieveUserProfile} className="hover:text-sidebar-primary">
           Profile
-        </Link>
+        </Button>
+        {/* <Link href="/profile" className="hover:text-sidebar-primary">
+          Profile
+        </Link> */}
       </div>
     </aside>
   );
