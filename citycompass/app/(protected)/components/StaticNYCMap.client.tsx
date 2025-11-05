@@ -54,9 +54,67 @@ export default function StaticNYCMap() {
         e.originalEvent.preventDefault(); // stops focus/outline
         e.originalEvent.stopPropagation(); // stops re-focusing other polygons
       },
-      click: () => {
-        const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, "-");
-        window.location.href = `/districts/${slug}`;
+      // click: () => {
+      //   const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+      //   window.location.href = `/districts/${slug}`;
+      // },
+      click: (e: any) => {
+        // Check if the district ID exists
+        if (!districtID) {
+          console.error("No districtID found for this feature", feature);
+          layer.bindPopup(`District ID not found.`).openPopup(e.latlng);
+          return;
+        }
+
+        // Open a loading popup immediately at the clicked location
+        layer.bindPopup("Loading prediction...").openPopup(e.latlng);
+
+        // Make the API call to your backend
+        fetch(
+          `http://localhost:8000/api/ml/predict?community_district=${districtID}`
+        )
+          .then((res) => {
+            if (!res.ok) {
+              // Handle backend errors (e.g., 404 Not Found, 500 Server Error)
+              return res.json().then((err) => {
+                throw new Error(err.detail || `Error: ${res.statusText}`);
+              });
+            }
+            return res.json();
+          })
+          .then((data) => {
+            // --- 3. Format the successful response ---
+            // 'data' is your JSON: { score, percentile, grade }
+            // Guard against missing/undefined numeric values to avoid runtime errors
+            const scoreText =
+              typeof data?.score === "number" ? data.score.toFixed(2) : "—";
+            const percentileText =
+              typeof data?.percentile === "number"
+                ? `${data.percentile.toFixed(1)}%`
+                : "—";
+            const gradeText = data?.grade ?? "—";
+
+            const popupContent = `
+            <div style="font-family: sans-serif; line-height: 1.4;">
+              <h4 style="margin: 0 0 5px 0; font-size: 1.1rem;">${name} (${districtID})</h4>
+              <p style="margin: 0;"><strong>Grade:</strong> ${gradeText}</p>
+              <p style="margin: 0;"><strong>Percentile:</strong> ${percentileText}</p>
+            </div>
+          `;
+
+            // Update the popup with the results
+            layer.setPopupContent(popupContent);
+          })
+          .catch((err) => {
+            // --- 4. Handle fetch errors ---
+            console.error("Failed to fetch prediction:", err);
+            layer.setPopupContent(`
+            <div style="font-family: sans-serif; color: red;">
+              <strong>Error loading data for ${districtID}</strong>
+              <p style="margin: 2px 0 0 0; font-size: 0.9rem;">${err.message}</p>
+            </div>
+          `);
+          });
       },
     });
 

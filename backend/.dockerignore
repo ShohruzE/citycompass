@@ -13,6 +13,7 @@ docker-compose*.yaml
 # Documentation
 README.md
 *.md
+*.txt
 
 # IDE
 .vscode

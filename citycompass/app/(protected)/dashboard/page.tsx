@@ -2,6 +2,7 @@
 
 import InsightCard from "../components/InsightCard";
 import StaticNYCMap from "../components/StaticNYCMap";
+import NeighborhoodACS from "../components/NeighborhoodACS";
 import { ScoreCard } from "../components/ScoreCard";
 import { Leaf, ShieldCheck, Database } from "lucide-react";
 
@@ -53,6 +54,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Score Cards */}
+      <NeighborhoodACS zip="10001" />
       <div className="flex flex-wrap gap-4">
         {mockScores.map((s) => (
           <ScoreCard key={s.title} {...s} />
@@ -63,7 +65,9 @@ export default function DashboardPage() {
         {/* Left: Map Section */}
         <div className="col-span-2 bg-card rounded-2xl shadow-sm border border-border p-4">
           <div className="flex items-center justify-between mb-3">
-            <h2 className="font-medium text-foreground">Neighborhood Overview</h2>
+            <h2 className="font-medium text-foreground">
+              Neighborhood Overview
+            </h2>
             <button className="text-sm text-primary hover:underline">
               Full Map
             </button>
@@ -77,7 +81,9 @@ export default function DashboardPage() {
         <div className="flex flex-col gap-4">
           <InsightCard
             color="green"
-            icon={<Leaf className="w-4 h-4 text-green-600 dark:text-green-400" />}
+            icon={
+              <Leaf className="w-4 h-4 text-green-600 dark:text-green-400" />
+            }
             title="Food Access Strength"
             description="Your neighborhood ranks higher than 70% in Food Access but scores 12 points lower than average in Safety."
             actionText="View Details"
@@ -85,7 +91,9 @@ export default function DashboardPage() {
 
           <InsightCard
             color="blue"
-            icon={<ShieldCheck className="w-4 h-4 text-blue-600 dark:text-blue-400" />}
+            icon={
+              <ShieldCheck className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+            }
             title="Safety Improvement"
             description="Safety projected to improve +4–6 points by April based on recent trends and city initiatives."
             actionText="See Forecast"
@@ -93,7 +101,9 @@ export default function DashboardPage() {
 
           <InsightCard
             color="amber"
-            icon={<Database className="w-4 h-4 text-amber-600 dark:text-amber-400" />}
+            icon={
+              <Database className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+            }
             title="Data Update"
             description="New survey responses available. Your input helps improve neighborhood scoring accuracy."
             actionText="Take Survey"

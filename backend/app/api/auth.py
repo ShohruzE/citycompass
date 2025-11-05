@@ -1,12 +1,12 @@
 # initial libraries to create basic API routes and errors
-from fastapi import APIRouter, Depends, Request, Response
+from fastapi import APIRouter, Depends, Request, Response, HTTPException
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 from typing import Annotated
 import re
 
 # connect to Postgres Database and read JSON from responses
-from app.schemas.db import get_db
+from app.core.db import get_db
 from pydantic import BaseModel
 from starlette.config import Config
 from authlib.integrations.starlette_client import OAuth, OAuthError
@@ -16,14 +16,7 @@ from app.models import models
 
 # All libraries used to support JWT & auth routes
 from datetime import timedelta, datetime
-
-# from typing import Annotated
-from fastapi import APIRouter, Depends, HTTPException
-
-# from pydantic import BaseModel
-# from sqlalchemy.orm import Session
 from starlette import status
-from app.schemas.db import SessionLocal
 from app.models.models import Users
 from passlib.context import CryptContext
 
@@ -43,15 +36,6 @@ load_dotenv()
 SECRET_KEY = os.getenv("SECRET_KEY")
 # assert SECRET_KEY, "SECRET_KEY not set"
 ALGORITHM = "HS256"
-
-
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-
 
 bcrypt_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_bearer = OAuth2PasswordBearer(tokenUrl="auth/token")
@@ -269,6 +253,7 @@ async def logout(request: Request, response: Response):
     # return RedirectResponse(url="http://localhost:3000")
 
 
+
 def is_valid_password(password):
     if len(password) < 8:
         return False
@@ -459,12 +444,9 @@ async def get_current_user(token: Annotated[str, Depends(oauth2_bearer)]):
     print(f"SECRET_KEY: {SECRET_KEY[:10]}...")  # Print first 10 chars
     print(f"ALGORITHM: {ALGORITHM}")
     try:
-        print("23")
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        print("23")
         username: str = payload.get("sub")
         user_id: int = payload.get("id")
-        print("print Username: ", username)
         if username is None or user_id is None:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,

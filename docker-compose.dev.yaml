@@ -36,12 +36,13 @@ services:
   backend:
     build:
       context: ./backend
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.dev
     ports:
       - "8000:8000"
     volumes:
       # Mount only the source code, not the entire directory
       - ./backend/app:/app/app
+      - ./ml:/app/ml   
       - ./backend/pyproject.toml:/app/pyproject.toml
       - ./backend/uv.lock:/app/uv.lock
     environment:

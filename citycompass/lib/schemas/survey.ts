@@ -62,6 +62,8 @@ export const financialsSchema = z.object({
   financialTestimonial: z.string().optional(),
 });
 
+// ... rest of the file stays the same ...
+
 // Step 6: Overall Feedback
 export const overallFeedbackSchema = z.object({
   overallRating: z.number().min(1, "Please select a rating").max(5, "Rating must be between 1 and 5"),
