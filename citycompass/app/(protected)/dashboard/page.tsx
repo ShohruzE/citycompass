@@ -2,7 +2,6 @@
 
 import InsightCard from "../components/InsightCard";
 import StaticNYCMap from "../components/StaticNYCMap";
-import NeighborhoodACS from "../components/NeighborhoodACS";
 import { ScoreCard } from "../components/ScoreCard";
 import { Leaf, ShieldCheck, Database } from "lucide-react";
 import useNeighborhoodACS from "../hooks/useNeighborhoodACS";
