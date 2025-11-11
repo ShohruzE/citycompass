@@ -2,20 +2,40 @@
 
 import InsightCard from "../components/InsightCard";
 import StaticNYCMap from "../components/StaticNYCMap";
-import NeighborhoodACS from "../components/NeighborhoodACS";
 import { ScoreCard } from "../components/ScoreCard";
 import { Leaf, ShieldCheck, Database } from "lucide-react";
-
-const mockScores = [
-  { title: "Overall Score", score: 78, delta: 2.3, timeframe: "+6mo" },
-  { title: "Safety", score: 82, delta: 1.8, timeframe: "+6mo" },
-  { title: "Cleanliness", score: 74, delta: -0.2, timeframe: "+6mo" },
-  { title: "Food Access", score: 65, delta: -0.5, timeframe: "+6mo" },
-  { title: "Financials", score: 71, delta: 1.2, timeframe: "+6mo" },
-  { title: "Crime", score: 79, delta: 0.8, timeframe: "+6mo" },
-];
+import useNeighborhoodACS from "../hooks/useNeighborhoodACS";
+import { useState } from "react";
 
 export default function DashboardPage() {
+  const {
+    data: acsData,
+    loading: acsLoading,
+    error: acsError,
+    zip: acsZip,
+    setZip: setAcsZip,
+  } = useNeighborhoodACS("10001");
+
+  // search input at top of page to change ZIP used across components
+  // Start empty on page load even though the hook defaults to ZIP 10001.
+  const [searchInput, setSearchInput] = useState<string>("");
+
+  // format values for the small ScoreCards
+  const population =
+    acsData?.total_population != null
+      ? acsData.total_population.toLocaleString()
+      : "—";
+  const medianIncome =
+    acsData?.median_household_income != null
+      ? `$${Number(acsData.median_household_income).toLocaleString()}`
+      : "—";
+  const medianAge =
+    acsData?.median_age != null ? acsData.median_age.toFixed(1) : "—";
+  const povertyRate =
+    acsData?.poverty_rate != null
+      ? `${(acsData.poverty_rate * 100).toFixed(1)}%`
+      : "—";
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -35,11 +55,22 @@ export default function DashboardPage() {
       </header>
 
       {/* Search Bar */}
-      <div className="flex gap-3 items-center">
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          const trimmed = searchInput.trim();
+          if (/^\d{5}$/.test(trimmed)) {
+            setAcsZip(trimmed);
+          }
+        }}
+        className="flex gap-3 items-center"
+      >
         <input
           type="text"
           placeholder="Search neighborhood, ZIP, or representative..."
           className="flex-1 px-4 py-2 border border-input rounded-lg text-sm bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+          value={searchInput}
+          onChange={(e) => setSearchInput(e.target.value)}
         />
         <div className="flex gap-2">
           {["Manhattan", "Safety", "Food Access"].map((tag) => (
@@ -51,14 +82,30 @@ export default function DashboardPage() {
             </span>
           ))}
         </div>
-      </div>
+      </form>
 
-      {/* Score Cards */}
-      <NeighborhoodACS zip="10001" />
+      {/* Score Cards*/}
       <div className="flex flex-wrap gap-4">
-        {mockScores.map((s) => (
-          <ScoreCard key={s.title} {...s} />
-        ))}
+        <ScoreCard
+          title="Population"
+          value={population}
+          subtitle={acsLoading ? "Loading…" : `ZIP: ${acsZip}`}
+        />
+        <ScoreCard
+          title="Median income"
+          value={medianIncome}
+          subtitle={acsLoading ? "Loading…" : `ZIP: ${acsZip}`}
+        />
+        <ScoreCard
+          title="Median age"
+          value={medianAge}
+          subtitle={acsLoading ? "Loading…" : `ZIP: ${acsZip}`}
+        />
+        <ScoreCard
+          title="Poverty rate"
+          value={povertyRate}
+          subtitle={acsLoading ? "Loading…" : `ZIP: ${acsZip}`}
+        />
       </div>
 
       <div className="grid grid-cols-3 gap-6">
