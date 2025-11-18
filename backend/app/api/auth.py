@@ -253,7 +253,6 @@ async def logout(request: Request, response: Response):
     # return RedirectResponse(url="http://localhost:3000")
 
 
-
 def is_valid_password(password):
     if len(password) < 8:
         return False
