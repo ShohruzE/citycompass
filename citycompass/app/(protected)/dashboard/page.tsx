@@ -60,7 +60,10 @@ export default function DashboardPage() {
           e.preventDefault();
           const trimmed = searchInput.trim();
           if (/^\d{5}$/.test(trimmed)) {
+            // update the hook's ZIP so data + ScoreCards re-fetch and re-render
             setAcsZip(trimmed);
+            // optional: clear input after submit
+            setSearchInput("");
           }
         }}
         className="flex gap-3 items-center"
