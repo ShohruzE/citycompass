@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Request
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
 from typing import Annotated
@@ -39,19 +39,19 @@ async def submit_survey(
 ) -> SurveyResponse:
     """
     Submit a neighborhood survey response.
-    
+
     **Authentication Required**: User must be logged in via OAuth.
-    
+
     **Request Body**: Complete survey data with all required fields.
-    
+
     **Returns**: Survey response with ID and confirmation message.
-    
+
     **Errors**:
     - 400: Validation errors in survey data
     - 401: User not authenticated
     - 500: Database or server error
     """
-    
+
     try:
         # Extract user email from session
         user_email = current_user.get("email")
@@ -61,9 +61,9 @@ async def submit_survey(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="User email not found in session. Please log in again.",
             )
-        
+
         logger.info(f"Processing survey submission for user: {user_email}")
-        
+
         # Create database model instance
         # Convert camelCase to snake_case for database
         db_survey = SurveyResponseModel(
@@ -106,18 +106,18 @@ async def submit_survey(
             area_for_improvement=survey_data.areaForImprovement,
             additional_comments=survey_data.additionalComments,
         )
-        
+
         # Add to database
         db.add(db_survey)
         db.commit()
         db.refresh(db_survey)
-        
+
         logger.info(
             f"Survey submitted successfully. ID: {db_survey.id}, "
             f"User: {user_email}, Borough: {survey_data.borough}, "
             f"Neighborhood: {survey_data.neighborhood}"
         )
-        
+
         # Return response
         return SurveyResponse(
             id=db_survey.id,
@@ -127,7 +127,7 @@ async def submit_survey(
             created_at=db_survey.created_at,
             message="Survey submitted successfully! Thank you for your feedback.",
         )
-        
+
     except ValidationError as e:
         # Pydantic validation errors (should be caught by FastAPI but just in case)
         logger.warning(f"Validation error: {e}")
@@ -135,7 +135,7 @@ async def submit_survey(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail={"detail": "Validation error", "field_errors": e.errors()},
         )
-        
+
     except SQLAlchemyError as e:
         # Database errors
         logger.error(f"Database error while submitting survey: {str(e)}")
@@ -144,7 +144,7 @@ async def submit_survey(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to save survey response. Please try again later.",
         )
-        
+
     except Exception as e:
         # Catch-all for unexpected errors
         logger.error(f"Unexpected error while submitting survey: {str(e)}")
@@ -169,12 +169,12 @@ async def get_my_surveys(
 ) -> list[SurveyResponse]:
     """
     Get all survey submissions for the authenticated user.
-    
+
     **Authentication Required**: User must be logged in via OAuth.
-    
+
     **Returns**: List of all surveys submitted by the user.
     """
-    
+
     try:
         user_email = current_user.get("email")
         if not user_email:
@@ -182,7 +182,7 @@ async def get_my_surveys(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="User email not found in session.",
             )
-        
+
         # Query user's surveys
         surveys = (
             db.query(SurveyResponseModel)
@@ -190,9 +190,9 @@ async def get_my_surveys(
             .order_by(SurveyResponseModel.created_at.desc())
             .all()
         )
-        
+
         logger.info(f"Retrieved {len(surveys)} surveys for user: {user_email}")
-        
+
         return [
             SurveyResponse(
                 id=survey.id,
@@ -204,12 +204,74 @@ async def get_my_surveys(
             )
             for survey in surveys
         ]
-        
+
     except SQLAlchemyError as e:
         logger.error(f"Database error while retrieving surveys: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to retrieve surveys. Please try again later.",
+        )
+
+
+@router.get(
+    "/current-location",
+    responses={
+        200: {"description": "User's current location from latest survey"},
+        401: {"model": ErrorResponse, "description": "Not authenticated"},
+    },
+)
+async def get_current_location(
+    db: db_dependency,
+    current_user: user_dependency,
+):
+    """
+    Get the user's current location (zip code) from their latest survey response.
+
+    **Authentication Required**: User must be logged in via OAuth.
+
+    **Returns**: Location data with zip_code, borough, neighborhood, and created_at, or null if no survey exists.
+    """
+
+    try:
+        user_email = current_user.get("email")
+        if not user_email:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="User email not found in session.",
+            )
+
+        # Query user's latest survey
+        latest_survey = (
+            db.query(SurveyResponseModel)
+            .filter(SurveyResponseModel.user_email == user_email)
+            .order_by(SurveyResponseModel.created_at.desc())
+            .first()
+        )
+
+        if not latest_survey:
+            return {
+                "zip_code": None,
+                "borough": None,
+                "neighborhood": None,
+                "created_at": None,
+            }
+
+        logger.info(
+            f"Retrieved current location for user: {user_email}, ZIP: {latest_survey.zip_code}"
+        )
+
+        return {
+            "zip_code": latest_survey.zip_code,
+            "borough": latest_survey.borough,
+            "neighborhood": latest_survey.neighborhood,
+            "created_at": latest_survey.created_at,
+        }
+
+    except SQLAlchemyError as e:
+        logger.error(f"Database error while retrieving current location: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to retrieve location. Please try again later.",
         )
 
 
@@ -222,17 +284,17 @@ async def get_my_surveys(
 async def get_survey_stats(db: db_dependency) -> dict:
     """
     Get general statistics about survey submissions.
-    
+
     **No Authentication Required**: Public statistics.
-    
+
     **Returns**: Overall survey statistics.
     """
-    
+
     try:
         from sqlalchemy import func
-        
+
         total_surveys = db.query(func.count(SurveyResponseModel.id)).scalar()
-        
+
         borough_stats = (
             db.query(
                 SurveyResponseModel.borough,
@@ -242,23 +304,24 @@ async def get_survey_stats(db: db_dependency) -> dict:
             .group_by(SurveyResponseModel.borough)
             .all()
         )
-        
+
         return {
             "total_surveys": total_surveys,
             "borough_breakdown": [
                 {
                     "borough": stat.borough,
                     "count": stat.count,
-                    "average_rating": round(float(stat.avg_rating), 2) if stat.avg_rating else None,
+                    "average_rating": round(float(stat.avg_rating), 2)
+                    if stat.avg_rating
+                    else None,
                 }
                 for stat in borough_stats
             ],
         }
-        
+
     except SQLAlchemyError as e:
         logger.error(f"Database error while retrieving stats: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to retrieve statistics.",
         )
-

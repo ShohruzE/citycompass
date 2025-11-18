@@ -1,21 +1,36 @@
 "use client";
 
-import { GeoJSON, MapContainer } from "react-leaflet";
+import { GeoJSON, MapContainer, Marker, Popup } from "react-leaflet";
 import { useEffect, useState } from "react";
 import type { FeatureCollection, Feature } from "geojson";
-import { point, Layer, LeafletMouseEvent } from "leaflet";
+import { point, Layer, LeafletMouseEvent, Icon, DivIcon } from "leaflet";
 import type L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import zipCoordinates from "@/lib/data/nyc-zip-coordinates.json";
 
 //Districts missing from our model dataset
 const MISSING_DISTRICTS = [
-  "BX26", "BX27", "BX28", "MN64", "SI95",
-  "QN80", "QN81", "QN82", "QN83", "QN84",
-  "BK55", "BK56",
+  "BX26",
+  "BX27",
+  "BX28",
+  "MN64",
+  "SI95",
+  "QN80",
+  "QN81",
+  "QN82",
+  "QN83",
+  "QN84",
+  "BK55",
+  "BK56",
 ];
 
-export default function StaticNYCMap() {
+interface StaticNYCMapProps {
+  currentZipCode?: string;
+}
+
+export default function StaticNYCMap({ currentZipCode }: StaticNYCMapProps) {
   const [geoData, setGeoData] = useState<FeatureCollection | null>(null);
+  const [zipMarker, setZipMarker] = useState<[number, number] | null>(null);
 
   useEffect(() => {
     fetch("/nyc_community_districts.geojson")
@@ -24,13 +39,23 @@ export default function StaticNYCMap() {
       .catch((err) => console.error("Failed to load GeoJSON", err));
   }, []);
 
+  // Update zip marker when currentZipCode changes
+  useEffect(() => {
+    if (currentZipCode && zipCoordinates[currentZipCode as keyof typeof zipCoordinates]) {
+      const coords = zipCoordinates[currentZipCode as keyof typeof zipCoordinates] as [number, number];
+      setZipMarker(coords);
+    } else {
+      setZipMarker(null);
+    }
+  }, [currentZipCode]);
+
   // Base map style
   const getDistrictStyle = (districtID: string | null) => {
     if (districtID && MISSING_DISTRICTS.includes(districtID)) {
       return {
         color: "#fff",
         weight: 1,
-        fillColor: "#d3d3d3", 
+        fillColor: "#d3d3d3",
         fillOpacity: 0.6,
         interactive: false,
       };
@@ -46,10 +71,7 @@ export default function StaticNYCMap() {
 
   const onEachDistrict = (feature: Feature, layer: Layer) => {
     const name =
-      feature.properties?.cdtaname ||
-      feature.properties?.boroname ||
-      feature.properties?.cdta2020 ||
-      "Unknown";
+      feature.properties?.cdtaname || feature.properties?.boroname || feature.properties?.cdta2020 || "Unknown";
 
     const districtID =
       feature.properties?.cdta2020 ||
@@ -108,12 +130,8 @@ export default function StaticNYCMap() {
             return res.json();
           })
           .then((data) => {
-            const scoreText =
-              typeof data?.score === "number" ? data.score.toFixed(2) : "—";
-            const percentileText =
-              typeof data?.percentile === "number"
-                ? `${data.percentile.toFixed(1)}%`
-                : "—";
+            const scoreText = typeof data?.score === "number" ? data.score.toFixed(2) : "—";
+            const percentileText = typeof data?.percentile === "number" ? `${data.percentile.toFixed(1)}%` : "—";
             const gradeText = data?.grade ?? "—";
 
             const popupContent = `
@@ -160,6 +178,43 @@ export default function StaticNYCMap() {
         }}
       >
         {geoData && <GeoJSON data={geoData} onEachFeature={onEachDistrict} />}
+        {zipMarker && (
+          <Marker
+            position={zipMarker}
+            icon={
+              new DivIcon({
+                className: "custom-zip-marker",
+                html: `
+                <div style="
+                  width: 20px;
+                  height: 20px;
+                  background-color: #ef4444;
+                  border: 3px solid white;
+                  border-radius: 50%;
+                  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+                  animation: pulse 2s infinite;
+                "></div>
+                <style>
+                  @keyframes pulse {
+                    0% { transform: scale(1); opacity: 1; }
+                    50% { transform: scale(1.2); opacity: 0.7; }
+                    100% { transform: scale(1); opacity: 1; }
+                  }
+                </style>
+              `,
+                iconSize: [20, 20],
+                iconAnchor: [10, 10],
+              })
+            }
+          >
+            <Popup>
+              <div style={{ fontFamily: "sans-serif", lineHeight: 1.4 }}>
+                <strong>Your Location</strong>
+                <p style={{ margin: "4px 0 0 0" }}>ZIP Code: {currentZipCode}</p>
+              </div>
+            </Popup>
+          </Marker>
+        )}
       </MapContainer>
     </div>
   );
