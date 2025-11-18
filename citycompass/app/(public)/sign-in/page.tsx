@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useState, useEffect } from 'react';
 import { useSearchParams } from "next/navigation";
 
+
 async function  testing(){
   const response = await fetch('http://127.0.0.1:8000/auth/test', {
   method: 'POST',
