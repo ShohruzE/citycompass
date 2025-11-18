@@ -28,7 +28,7 @@ export async function submitSurvey(formData: SurveyFormData) {
     if (!response.ok) {
       throw new Error("Failed to submit survey");
     }
-    revalidatePath("/survey");
+    // revalidatePath("/survey");
   } catch (error) {
     console.error("Error submitting survey:", error);
     return {
