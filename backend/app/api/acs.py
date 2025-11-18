@@ -12,7 +12,7 @@ _CACHE_TTL = 3600
 ACS_VARS = {
     "B01003_001E": "total_population",
     "B19013_001E": "median_household_income",
-    "B25077_001E": "median_age",
+    "B01002_001E": "median_age",
     "B17001_002E": "poverty_count",
     "B17001_001E": "poverty_total",
 }

@@ -15,15 +15,19 @@ from sqlalchemy.orm import Session
 # The three libraries below are used to create a model of the database, create the connection to the database
 # and import the SQL alchemy DB
 from app.models.models import Base
-from app.core.db import SessionLocal, engine, get_db
-from app.api import auth, ml, acs
+from app.core.db import engine, get_db
+from app.api import auth, ml, acs, survey
 
 # All libraries below are used to enable OAuth
 from starlette.middleware.sessions import SessionMiddleware
 from starlette.responses import HTMLResponse
 
 # initialize FastAPI App
-app = FastAPI()
+app = FastAPI(
+    title="CityCompass API",
+    description="Backend API for CityCompass neighborhood survey and analytics",
+    version="1.0.0",
+)
 
 
 # Adds session Middleware #document_further
@@ -61,6 +65,7 @@ app.add_middleware(
 
 Base.metadata.create_all(bind=engine)
 
+
 # Create Model for a user
 class UserBase(BaseModel):
     email: str
@@ -76,6 +81,8 @@ user_dependency = Annotated[dict, Depends(auth.get_current_user)]
 app.include_router(auth.router, prefix="/api")
 app.include_router(ml.router, prefix="/api")
 app.include_router(acs.router, prefix="/api")
+
+
 # root will determine if a user session has been saved, if not it shows a link to to the login route
 @app.get("/")
 async def homepage(request: Request):
@@ -94,6 +101,9 @@ async def user(user: user_dependency, db: db_dependency):
     if user is None:
         raise HTTPException(status_code=401, detail="Authentication Failed")
     return {"User": user}
+
+
+app.include_router(survey.router, prefix="/api")
 
 
 if __name__ == "__main__":

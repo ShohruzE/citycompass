@@ -14,7 +14,7 @@ project_root = Path(__file__).parent
 # sys.path.insert(0, str(project_root))
 
 from app.main import app  # Your FastAPI app
-from app.schemas.db import get_db  # Adjust import path
+from app.core.db import get_db  # Adjust import path
 
 # Use in-memory SQLite for testing
 settings = get_settings()
