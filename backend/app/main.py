@@ -23,6 +23,16 @@ from starlette.middleware.sessions import SessionMiddleware
 from starlette.responses import HTMLResponse, RedirectResponse
 #  Authlib allows us to use OAuth to authenticate users using popular services like MS and Google
 from authlib.integrations.starlette_client import OAuth, OAuthError
+
+
+import logging
+from app.logger import setup_logging 
+
+setup_logging()
+
+# Get logger
+logger = logging.getLogger(__name__)
+
 # initialize FastAPI App
 app = FastAPI()
 
@@ -59,6 +69,9 @@ app.add_middleware(
     allow_headers=["*"],
     expose_headers=["Content-Type", "Authorization"],
 )
+
+
+
 
 app.include_router(auth.router)
 # #document_further

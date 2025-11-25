@@ -29,11 +29,16 @@ from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
 from jose import jwt, JWTError
 # Config file reads environment file
 from dotenv import load_dotenv
-import os
+import os 
+
+# from app.logger import log_to_sumo
  
 # Logs information so developers can see what is happening under the hood
 import logging
+# from app.logger import setup_logging
+# setup_logging()  # Call once at startup
 logger = logging.getLogger(__name__)
+
 
 router = APIRouter(
     prefix='/auth',
@@ -114,6 +119,9 @@ root will determine if a user session has been saved, if not it shows a link to 
 """ 
 @router.get("/")
 async def homepage(request: Request):
+    print(logger)
+    # log_to_sumo("INFO", "Users endpoint called", {"endpoint": "/"})
+    logger.info("Homepage")
     user = request.session.get("user")
     if user:
         data = json.dumps(user)
@@ -131,6 +139,7 @@ async def homepage(request: Request):
 """
 @router.get("/google-login")
 async def login(request: Request):
+    # log_to_sumo("INFO", "Gmail login endpoint called", {"endpoint": "/"})
     # Logging statement to see when users attempt a google login
     logging.info('User is attempting to sign in using Google Account, User is redirected')
     redirect_uri = request.url_for("google_auth")
@@ -226,7 +235,7 @@ async def google_auth(request: Request, db:db_dependency):
             # raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
             #                     detail='Could not validate user.')
         else:
-            logging.info( "user successfully created/found with the following id: " + db_user.id)
+            logging.info( "user successfully created/found with the following id: " + str(db_user.id))
             # print(db_user.id)
     except HTTPException:
         logging.error(error)
@@ -407,11 +416,19 @@ async def create_user(db:db_dependency, create_user_request: CreateUserRequest):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
                                 detail='User Email already in use.')
 
-# create token function 
+"""
+    output: creates a JWT token using the user's id and username(email)
+    return: JWT Token
+    parameters: username and user id
+"""
 def create_jwt_token(username, id):
     token = create_access_token(username, id, timedelta(minutes=30))
     return token
 
+"""
+    output: function to test if cors is working by calling a simple endpoint
+    return: response with string "CORS works" if frontend can call the backend
+"""
 @router.post("/test")
 async def test():
     return {"message": "CORS works!"}
