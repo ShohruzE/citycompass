@@ -12,6 +12,8 @@ interface ScoreCardProps {
   timeframe?: string;
   icon?: React.ReactNode;
   color?: CardColor;
+  insight?: string;
+  className?: string;
 }
 
 const colorClasses: Record<CardColor, { bg: string; icon: string; border: string }> = {
@@ -47,26 +49,49 @@ const colorClasses: Record<CardColor, { bg: string; icon: string; border: string
   },
 };
 
-export function ScoreCard({ title, value, subtitle, score, delta, timeframe, icon, color = "blue" }: ScoreCardProps) {
+export function ScoreCard({
+  title,
+  value,
+  subtitle,
+  score,
+  delta,
+  timeframe,
+  icon,
+  color = "blue",
+  insight,
+  className,
+}: ScoreCardProps) {
   const colors = colorClasses[color];
 
   if (value !== undefined) {
     return (
       <div
         className={cn(
-          "group relative bg-gradient-to-br rounded-2xl shadow-sm hover:shadow-md p-5 w-[180px] border transition-all duration-200 hover:scale-[1.02]",
+          "group relative bg-gradient-to-br rounded-2xl shadow-sm hover:shadow-md p-6 w-full border transition-all duration-200 hover:scale-[1.01]",
           colors.bg,
           colors.border,
-          "hover:border-opacity-70"
+          "hover:border-opacity-70",
+          className
         )}
       >
-        <div className="flex items-start justify-between mb-2">
+        <div className="flex items-start justify-between mb-3">
           <div className="text-sm font-medium text-muted-foreground">{title}</div>
-          {icon && <div className={cn("opacity-80", colors.icon)}>{icon}</div>}
+          {icon && (
+            <div className={cn("opacity-80 p-2 rounded-full bg-white/50 dark:bg-black/10", colors.icon)}>{icon}</div>
+          )}
         </div>
-        <div className="text-2xl font-semibold mt-1 text-foreground leading-tight">{value}</div>
+        <div className="text-3xl font-bold mt-1 text-foreground leading-tight">{value}</div>
+
+        {insight && (
+          <div className="mt-3 mb-3 text-sm font-medium flex items-center gap-1.5">
+            <span className={cn(colors.icon)}>{insight}</span>
+          </div>
+        )}
+
         {subtitle ? (
-          <div className="text-xs text-muted-foreground mt-2 pt-2 border-t border-border/30">{subtitle}</div>
+          <div className="text-xs text-muted-foreground mt-auto pt-3 border-t border-border/30 flex justify-between items-center">
+            <span>{subtitle}</span>
+          </div>
         ) : null}
       </div>
     );
@@ -82,7 +107,8 @@ export function ScoreCard({ title, value, subtitle, score, delta, timeframe, ico
         "group relative bg-gradient-to-br rounded-2xl shadow-sm hover:shadow-md p-5 w-[180px] border transition-all duration-200 hover:scale-[1.02]",
         colors.bg,
         colors.border,
-        "hover:border-opacity-70"
+        "hover:border-opacity-70",
+        className
       )}
     >
       {/* Title */}

@@ -47,6 +47,38 @@ export default function DashboardPage() {
   const medianAge = acsData?.median_age != null ? acsData.median_age.toFixed(1) : "—";
   const povertyRate = acsData?.poverty_rate != null ? `${(acsData.poverty_rate * 100).toFixed(1)}%` : "—";
 
+  // Helper functions for dynamic insights
+  const getIncomeInsight = (income: number | null | undefined): string => {
+    if (income == null) return "—";
+    if (income >= 100000) return "High Income Area";
+    if (income >= 70000) return "Above Average Income";
+    if (income >= 50000) return "Average Income Area";
+    return "Lower Income Area";
+  };
+
+  const getAgeInsight = (age: number | null | undefined): string => {
+    if (age == null) return "—";
+    if (age < 30) return "Young Demographic";
+    if (age < 40) return "Young Professionals";
+    if (age <= 50) return "Family-Oriented";
+    return "Mature Community";
+  };
+
+  const getPopInsight = (pop: number | null | undefined): string => {
+    if (!pop) return "—";
+    return pop > 30000 ? "High Population Density" : "Moderate Density";
+  };
+
+  const getPovertyInsight = (rate: number | null | undefined): string => {
+    if (rate == null) return "—";
+    return rate < 0.15 ? "Low Poverty Rate" : "Moderate Poverty Rate";
+  };
+
+  const incomeInsight = getIncomeInsight(acsData?.median_household_income);
+  const ageInsight = getAgeInsight(acsData?.median_age);
+  const popInsight = getPopInsight(acsData?.total_population);
+  const povertyInsight = getPovertyInsight(acsData?.poverty_rate);
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -105,23 +137,17 @@ export default function DashboardPage() {
           value={searchInput}
           onChange={(e) => setSearchInput(e.target.value)}
         />
-        <div className="flex gap-2">
-          {["Manhattan", "Safety", "Food Access"].map((tag) => (
-            <span key={tag} className="px-3 py-1 bg-muted text-muted-foreground rounded-full text-xs font-medium">
-              {tag}
-            </span>
-          ))}
-        </div>
       </form>
 
       {/* Score Cards*/}
-      <div className="flex flex-wrap gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <ScoreCard
           title="Population"
           value={population}
           subtitle={acsLoading ? "Loading…" : `ZIP: ${acsZip}`}
           icon={<Users className="w-4 h-4" />}
           color="blue"
+          insight={popInsight}
         />
         <ScoreCard
           title="Median income"
@@ -129,6 +155,7 @@ export default function DashboardPage() {
           subtitle={acsLoading ? "Loading…" : `ZIP: ${acsZip}`}
           icon={<DollarSign className="w-4 h-4" />}
           color="green"
+          insight={incomeInsight}
         />
         <ScoreCard
           title="Median age"
@@ -136,6 +163,7 @@ export default function DashboardPage() {
           subtitle={acsLoading ? "Loading…" : `ZIP: ${acsZip}`}
           icon={<Calendar className="w-4 h-4" />}
           color="purple"
+          insight={ageInsight}
         />
         <ScoreCard
           title="Poverty rate"
@@ -143,6 +171,7 @@ export default function DashboardPage() {
           subtitle={acsLoading ? "Loading…" : `ZIP: ${acsZip}`}
           icon={<AlertCircle className="w-4 h-4" />}
           color="amber"
+          insight={povertyInsight}
         />
       </div>
 
