@@ -57,6 +57,7 @@ dependencies = [
     "joblib==1.5.2",
     "openpyxl==3.1.5",
     "et-xmlfile==2.0.0",
+    "ollama>=0.1.7",
     # --- HTTP Client ---
     "requests>=2.31.0"
 ]
