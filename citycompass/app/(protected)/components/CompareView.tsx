@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { TrendingUp } from "lucide-react";
 import useNeighborhoodACS from "../hooks/useNeighborhoodACS";
@@ -13,10 +13,10 @@ export default function CompareView() {
   const a = useNeighborhoodACS(zipA);
   const b = useNeighborhoodACS(zipB);
 
-  const [nsqiA, setNsqiA] = useState<number | null>(null);
-  const [nsqiB, setNsqiB] = useState<number | null>(null);
-  const [nsqiLoadingA, setNsqiLoadingA] = useState(false);
-  const [nsqiLoadingB, setNsqiLoadingB] = useState(false);
+  const [nsqiA] = useState<number | null>(null);
+  const [nsqiB] = useState<number | null>(null);
+  const [nsqiLoadingA] = useState(false);
+  const [nsqiLoadingB] = useState(false);
 
   // NEED TO FIX NSQI FETCHING
 
@@ -79,22 +79,29 @@ export default function CompareView() {
     return aVal < bVal ? "a" : "b";
   };
 
-  const summaryA = {
-    population: a.data?.total_population ?? null,
-    income: a.data?.median_household_income ?? null,
-    poverty: a.data?.poverty_rate ?? null,
-    // safety: a.data?.safety_score ?? null,
-    // cleanliness: a.data?.cleanliness_score ?? null,
-    nsqi: nsqiA,
-  };
-  const summaryB = {
-    population: b.data?.total_population ?? null,
-    income: b.data?.median_household_income ?? null,
-    poverty: b.data?.poverty_rate ?? null,
-    // safety: b.data?.safety_score ?? null,
-    // cleanliness: b.data?.cleanliness_score ?? null,
-    nsqi: nsqiB,
-  };
+  const summaryA = useMemo(
+    () => ({
+      population: a.data?.total_population ?? null,
+      income: a.data?.median_household_income ?? null,
+      poverty: a.data?.poverty_rate ?? null,
+      // safety: a.data?.safety_score ?? null,
+      // cleanliness: a.data?.cleanliness_score ?? null,
+      nsqi: nsqiA,
+    }),
+    [a.data, nsqiA]
+  );
+
+  const summaryB = useMemo(
+    () => ({
+      population: b.data?.total_population ?? null,
+      income: b.data?.median_household_income ?? null,
+      poverty: b.data?.poverty_rate ?? null,
+      // safety: b.data?.safety_score ?? null,
+      // cleanliness: b.data?.cleanliness_score ?? null,
+      nsqi: nsqiB,
+    }),
+    [b.data, nsqiB]
+  );
 
   const metrics = useMemo(
     () => [
@@ -237,7 +244,7 @@ export default function CompareView() {
       </div>
 
       <div className="bg-card rounded-2xl p-4 border border-border">
-        <StaticNYCMap {...({ highlightZips: [zipA, zipB] } as any)} />
+        <StaticNYCMap currentZipCode={zipA} />
       </div>
 
       <Card className="border-slate-200 bg-slate-50">
