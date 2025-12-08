@@ -3,33 +3,17 @@
 import InsightCard from "../components/InsightCard";
 import StaticNYCMap from "../components/StaticNYCMap";
 import { ScoreCard } from "../components/ScoreCard";
-import {
-  Leaf,
-  ShieldCheck,
-  Database,
-  MapPin,
-  Users,
-  DollarSign,
-  Calendar,
-  AlertCircle,
-} from "lucide-react";
+import { Leaf, ShieldCheck, Database, MapPin, Users, DollarSign, Calendar, AlertCircle } from "lucide-react";
 import useNeighborhoodACS from "../hooks/useNeighborhoodACS";
 import { useState, useEffect } from "react";
 import { useUserLocation } from "@/lib/contexts/UserLocationContext";
-import Link from "next/link";
 import { LocationSearchCombobox } from "../components/LocationSearchCombobox";
 import { LocationBadge } from "../components/LocationBadge";
 import { getDisplayNameForZip, type Location } from "@/lib/data/nyc-locations";
 import { inferBoroughFromZip } from "@/lib/actions/location";
 
 export default function DashboardPage() {
-  const {
-    zipCode,
-    neighborhood,
-    loading: locationLoading,
-    refreshLocation,
-    updateLocation,
-  } = useUserLocation();
+  const { zipCode, neighborhood, loading: locationLoading, refreshLocation, updateLocation } = useUserLocation();
 
   // Use user's zip code or fallback to default
   const defaultZip = zipCode || "10001";
@@ -47,12 +31,7 @@ export default function DashboardPage() {
     }
   }, [zipCode, viewingZip]);
 
-  const {
-    data: acsData,
-    loading: acsLoading,
-    zip: acsZip,
-    setZip: setAcsZip,
-  } = useNeighborhoodACS(viewingZip);
+  const { data: acsData, loading: acsLoading, zip: acsZip, setZip: setAcsZip } = useNeighborhoodACS(viewingZip);
 
   // Update ACS zip when viewing location changes
   useEffect(() => {
@@ -65,20 +44,11 @@ export default function DashboardPage() {
   const isViewingDifferentLocation = viewingZip !== zipCode;
 
   // format values for the small ScoreCards
-  const population =
-    acsData?.total_population != null
-      ? acsData.total_population.toLocaleString()
-      : "—";
+  const population = acsData?.total_population != null ? acsData.total_population.toLocaleString() : "—";
   const medianIncome =
-    acsData?.median_household_income != null
-      ? `$${Number(acsData.median_household_income).toLocaleString()}`
-      : "—";
-  const medianAge =
-    acsData?.median_age != null ? acsData.median_age.toFixed(1) : "—";
-  const povertyRate =
-    acsData?.poverty_rate != null
-      ? `${(acsData.poverty_rate * 100).toFixed(1)}%`
-      : "—";
+    acsData?.median_household_income != null ? `$${Number(acsData.median_household_income).toLocaleString()}` : "—";
+  const medianAge = acsData?.median_age != null ? acsData.median_age.toFixed(1) : "—";
+  const povertyRate = acsData?.poverty_rate != null ? `${(acsData.poverty_rate * 100).toFixed(1)}%` : "—";
 
   // Helper functions for dynamic insights
   const getIncomeInsight = (income: number | null | undefined): string => {
@@ -203,17 +173,6 @@ export default function DashboardPage() {
         <div className="w-full">
           <LocationSearchCombobox value={viewingZip} onChange={handleLocationChange} disabled={locationLoading} />
         </div>
-
-        {/* Error Display */}
-        {locationError && (
-          <div
-            role="alert"
-            className="p-3 rounded-lg bg-destructive/10 border border-destructive/30 text-destructive text-sm animate-in fade-in-50 duration-300"
-          >
-            <span className="font-medium">Error: </span>
-            {locationError}
-          </div>
-        )}
       </div>
 
       {/* Score Cards*/}
@@ -252,27 +211,12 @@ export default function DashboardPage() {
         />
       </div>
 
-      {/* ACS Error Display */}
-      {acsError && (
-        <div
-          role="alert"
-          className="p-4 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-700 dark:text-amber-400 text-sm animate-in fade-in-50 duration-300"
-        >
-          <span className="font-medium">Note: </span>
-          Unable to load demographic data for this location. The data may not be available for this ZIP code.
-        </div>
-      )}
-
       <div className="grid grid-cols-3 gap-6">
         {/* Left: Map Section */}
         <div className="col-span-2 bg-card rounded-2xl shadow-sm border border-border p-4">
           <div className="flex items-center justify-between mb-3">
-            <h2 className="font-medium text-foreground">
-              Neighborhood Overview
-            </h2>
-            <button className="text-sm text-primary hover:underline">
-              Full Map
-            </button>
+            <h2 className="font-medium text-foreground">Neighborhood Overview</h2>
+            <button className="text-sm text-primary hover:underline">Full Map</button>
           </div>
           <div className="w-full">
             <StaticNYCMap currentZipCode={viewingZip || undefined} />
@@ -283,9 +227,7 @@ export default function DashboardPage() {
         <div className="flex flex-col gap-4">
           <InsightCard
             color="green"
-            icon={
-              <Leaf className="w-4 h-4 text-green-600 dark:text-green-400" />
-            }
+            icon={<Leaf className="w-4 h-4 text-green-600 dark:text-green-400" />}
             title="Food Access Strength"
             description="Your neighborhood ranks higher than 70% in Food Access but scores 12 points lower than average in Safety."
             actionText="View Details"
@@ -293,9 +235,7 @@ export default function DashboardPage() {
 
           <InsightCard
             color="blue"
-            icon={
-              <ShieldCheck className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-            }
+            icon={<ShieldCheck className="w-4 h-4 text-blue-600 dark:text-blue-400" />}
             title="Safety Improvement"
             description="Safety projected to improve +4–6 points by April based on recent trends and city initiatives."
             actionText="See Forecast"
@@ -303,9 +243,7 @@ export default function DashboardPage() {
 
           <InsightCard
             color="amber"
-            icon={
-              <Database className="w-4 h-4 text-amber-600 dark:text-amber-400" />
-            }
+            icon={<Database className="w-4 h-4 text-amber-600 dark:text-amber-400" />}
             title="Data Update"
             description="New survey responses available. Your input helps improve neighborhood scoring accuracy."
             actionText="Take Survey"
