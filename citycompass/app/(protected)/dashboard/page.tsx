@@ -95,7 +95,7 @@ export default function DashboardPage() {
     setIsUpdatingLocation(true);
     try {
       const locationBorough = viewingLocation?.borough || inferBoroughFromZip(viewingZip);
-      const locationName = viewingLocation?.label || neighborhood;
+      const locationName = viewingLocation?.label || getDisplayNameForZip(viewingZip);
 
       await updateLocation(viewingZip, locationBorough ?? undefined, locationName ?? undefined);
       // Success - the context will update automatically
