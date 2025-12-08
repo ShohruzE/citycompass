@@ -3,7 +3,7 @@
 import { GeoJSON, MapContainer, Marker, Popup } from "react-leaflet";
 import { useEffect, useState } from "react";
 import type { FeatureCollection, Feature } from "geojson";
-import { point, Layer, LeafletMouseEvent, Icon, DivIcon } from "leaflet";
+import { point, Layer, LeafletMouseEvent, DivIcon } from "leaflet";
 import type L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import zipCoordinates from "@/lib/data/nyc-zip-coordinates.json";
@@ -41,8 +41,13 @@ export default function StaticNYCMap({ currentZipCode }: StaticNYCMapProps) {
 
   // Update zip marker when currentZipCode changes
   useEffect(() => {
-    if (currentZipCode && zipCoordinates[currentZipCode as keyof typeof zipCoordinates]) {
-      const coords = zipCoordinates[currentZipCode as keyof typeof zipCoordinates] as [number, number];
+    if (
+      currentZipCode &&
+      zipCoordinates[currentZipCode as keyof typeof zipCoordinates]
+    ) {
+      const coords = zipCoordinates[
+        currentZipCode as keyof typeof zipCoordinates
+      ] as [number, number];
       setZipMarker(coords);
     } else {
       setZipMarker(null);
@@ -71,7 +76,10 @@ export default function StaticNYCMap({ currentZipCode }: StaticNYCMapProps) {
 
   const onEachDistrict = (feature: Feature, layer: Layer) => {
     const name =
-      feature.properties?.cdtaname || feature.properties?.boroname || feature.properties?.cdta2020 || "Unknown";
+      feature.properties?.cdtaname ||
+      feature.properties?.boroname ||
+      feature.properties?.cdta2020 ||
+      "Unknown";
 
     const districtID =
       feature.properties?.cdta2020 ||
@@ -120,7 +128,9 @@ export default function StaticNYCMap({ currentZipCode }: StaticNYCMapProps) {
 
         layer.bindPopup("Loading prediction...").openPopup(e.latlng);
 
-        fetch(`http://localhost:8000/api/ml/predict?community_district=${districtID}`)
+        fetch(
+          `http://localhost:8000/api/ml/predict?community_district=${districtID}`
+        )
           .then((res) => {
             if (!res.ok) {
               return res.json().then((err) => {
@@ -130,8 +140,10 @@ export default function StaticNYCMap({ currentZipCode }: StaticNYCMapProps) {
             return res.json();
           })
           .then((data) => {
-            const scoreText = typeof data?.score === "number" ? data.score.toFixed(2) : "—";
-            const percentileText = typeof data?.percentile === "number" ? `${data.percentile.toFixed(1)}%` : "—";
+            const percentileText =
+              typeof data?.percentile === "number"
+                ? `${data.percentile.toFixed(1)}%`
+                : "—";
             const gradeText = data?.grade ?? "—";
 
             const popupContent = `
@@ -210,7 +222,9 @@ export default function StaticNYCMap({ currentZipCode }: StaticNYCMapProps) {
             <Popup>
               <div style={{ fontFamily: "sans-serif", lineHeight: 1.4 }}>
                 <strong>Your Location</strong>
-                <p style={{ margin: "4px 0 0 0" }}>ZIP Code: {currentZipCode}</p>
+                <p style={{ margin: "4px 0 0 0" }}>
+                  ZIP Code: {currentZipCode}
+                </p>
               </div>
             </Popup>
           </Marker>
