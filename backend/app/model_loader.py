@@ -6,7 +6,6 @@ import numpy as np
 import joblib
 
 # Add project root to Python path
-# Go up 3 levels: model_loader.py -> app/ -> backend/ -> project_root/
 ROOT_DIR = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(ROOT_DIR))
 

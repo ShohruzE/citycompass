@@ -43,8 +43,13 @@
   --radius-xl: calc(var(--radius) + 4px);
 }
 
-body {
-  padding: 1rem;
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
 }
 
 :root {
@@ -143,13 +148,4 @@ body {
   --sidebar-accent-foreground: oklch(0.97 0.002 210);
   --sidebar-border: oklch(0.25 0.01 250);
   --sidebar-ring: oklch(0.7 0.12 190);
-}
-
-@layer base {
-  * {
-    @apply border-border outline-ring/50;
-  }
-  body {
-    @apply bg-background text-foreground;
-  }
 }
