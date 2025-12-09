@@ -1,6 +1,5 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
 import { surveyFormSchema, type SurveyFormData } from "../schemas/survey";
 
 export async function submitSurvey(formData: SurveyFormData) {
