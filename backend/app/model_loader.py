@@ -6,7 +6,7 @@ import numpy as np
 import joblib
 
 # Add project root to Python path
-ROOT_DIR = Path(__file__).resolve().parent.parent
+ROOT_DIR = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(ROOT_DIR))
 
 from ml.pipeline.preprocess import build_furman_dataset
