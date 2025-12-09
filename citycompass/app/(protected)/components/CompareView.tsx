@@ -5,10 +5,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { TrendingUp } from "lucide-react";
 import useNeighborhoodACS from "../hooks/useNeighborhoodACS";
 import StaticNYCMap from "./StaticNYCMap";
+import { LocationSearchCombobox } from "./LocationSearchCombobox";
+import type { Location } from "@/lib/data/nyc-locations";
 
 export default function CompareView() {
   const [zipA, setZipA] = useState("10001");
   const [zipB, setZipB] = useState("11211");
+  const [locationA, setLocationA] = useState<Location | null>(null);
+  const [locationB, setLocationB] = useState<Location | null>(null);
 
   const a = useNeighborhoodACS(zipA);
   const b = useNeighborhoodACS(zipB);
@@ -146,6 +150,22 @@ export default function CompareView() {
     [summaryA, summaryB]
   );
 
+  const handleLocationAChange = (newZipCode: string, location: Location | null) => {
+    setZipA(newZipCode);
+    setLocationA(location);
+  };
+
+  const handleLocationBChange = (newZipCode: string, location: Location | null) => {
+    setZipB(newZipCode);
+    setLocationB(location);
+  };
+
+  const handleCompare = () => {
+    a.setZip(zipA);
+    b.setZip(zipB);
+    console.log("Comparing:", zipA, "vs", zipB);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex gap-4 items-end">
@@ -153,11 +173,10 @@ export default function CompareView() {
           <label className="text-sm text-muted-foreground block mb-1">
             Neighborhood / ZIP A
           </label>
-          <input
-            className="w-full px-3 py-2 border rounded"
-            placeholder="Enter ZIP (e.g., 10003)"
+          <LocationSearchCombobox
             value={zipA}
-            onChange={(e) => setZipA(e.target.value)}
+            onChange={handleLocationAChange}
+            disabled={false}
           />
         </div>
 
@@ -165,22 +184,17 @@ export default function CompareView() {
           <label className="text-sm text-muted-foreground block mb-1">
             Neighborhood / ZIP B
           </label>
-          <input
-            className="w-full px-3 py-2 border rounded"
-            placeholder="Enter ZIP (e.g., 11211)"
+          <LocationSearchCombobox
             value={zipB}
-            onChange={(e) => setZipB(e.target.value)}
+            onChange={handleLocationBChange}
+            disabled={false}
           />
         </div>
 
         <div>
           <button
             className="text-sm px-4 py-2 rounded-md bg-primary text-primary-foreground hover:bg-primary/90"
-            onClick={() => {
-              a.setZip(zipA);
-              b.setZip(zipB);
-              console.log("button clicked");
-            }}
+            onClick={handleCompare}
           >
             Compare
           </button>

@@ -14,7 +14,9 @@ import type { FeatureCollection, Feature } from "geojson";
 import "leaflet/dist/leaflet.css";
 import { useEffect, useState } from "react";
 import { useUserLocation } from "@/lib/contexts/UserLocationContext";
-import { Search, X, MapPin, Info, Layers } from "lucide-react";
+import { MapPin, Info, Layers } from "lucide-react";
+import { LocationSearchCombobox } from "./LocationSearchCombobox";
+import type { Location } from "@/lib/data/nyc-locations";
 
 // Fix for default marker icon
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -47,42 +49,26 @@ interface DistrictData {
 }
 
 interface MapControlsProps {
-  searchQuery: string;
-  onSearchChange: (value: string) => void;
-  onSearch: () => void;
-  onClearSearch: () => void;
+  searchZip: string;
+  onLocationChange: (zipCode: string, location: Location | null) => void;
   showLegend: boolean;
   onToggleLegend: () => void;
 }
 
 function MapControls({
-  searchQuery,
-  onSearchChange,
-  onSearch,
-  onClearSearch,
+  searchZip,
+  onLocationChange,
   showLegend,
   onToggleLegend,
 }: MapControlsProps) {
   return (
-    <div className="absolute top-4 left-4 z-[1000] flex gap-2">
-      <div className="bg-white rounded-lg shadow-lg p-2 flex items-center gap-2">
-        <Search className="h-5 w-5 text-gray-500" />
-        <input
-          type="text"
-          placeholder="Search by ZIP code..."
-          value={searchQuery}
-          onChange={(e) => onSearchChange(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && onSearch()}
-          className="outline-none text-sm w-48"
+    <div className="absolute top-4 left-4 z-[9999] flex gap-2 pointer-events-auto">
+      <div className="w-80">
+        <LocationSearchCombobox
+          value={searchZip}
+          onChange={onLocationChange}
+          disabled={false}
         />
-        {searchQuery && (
-          <button
-            onClick={onClearSearch}
-            className="p-1 hover:bg-gray-100 rounded"
-          >
-            <X className="h-4 w-4 text-gray-500" />
-          </button>
-        )}
       </div>
       <button
         onClick={onToggleLegend}
@@ -101,7 +87,7 @@ function Legend({ show }: { show: boolean }) {
   if (!show) return null;
 
   return (
-    <div className="absolute bottom-8 left-4 z-[1000] bg-white rounded-lg shadow-lg p-4 max-w-xs">
+    <div className="absolute bottom-8 left-4 z-[9999] bg-white rounded-lg shadow-lg p-4 max-w-xs pointer-events-auto">
       <h3 className="font-semibold text-sm mb-3 flex items-center gap-2">
         <Layers className="h-4 w-4" />
         Map Legend
@@ -142,7 +128,7 @@ function SelectedDistrictPanel({
   if (!districtData && !districtName) return null;
 
   return (
-    <div className="absolute top-20 right-4 z-[1000] bg-white rounded-lg shadow-xl p-4 w-80">
+    <div className="absolute top-20 right-4 z-[9999] bg-white rounded-lg shadow-xl p-4 w-80 pointer-events-auto">
       <div className="flex items-start justify-between mb-3">
         <h3 className="font-semibold text-lg flex items-center gap-2">
           <MapPin className="h-5 w-5 text-blue-600" />
@@ -213,7 +199,7 @@ export default function FullPageMapClient() {
   const { zipCode } = useUserLocation();
   const [geoData, setGeoData] = useState<FeatureCollection | null>(null);
   const [zipMarker, setZipMarker] = useState<[number, number] | null>(null);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchZip, setSearchZip] = useState("");
   const [searchMarker, setSearchMarker] = useState<[number, number] | null>(
     null
   );
@@ -254,11 +240,17 @@ export default function FullPageMapClient() {
     }
   }, [zipCode]);
 
-  const handleSearch = () => {
-    if (!searchQuery.trim()) return;
+  const handleLocationChange = (newZipCode: string, location: Location | null) => {
+    setSearchZip(newZipCode);
+    
+    if (!newZipCode.trim()) {
+      setSearchMarker(null);
+      return;
+    }
 
+    // Geocode the selected ZIP code
     fetch(
-      `https://nominatim.openstreetmap.org/search?postalcode=${searchQuery}&country=US&format=json&limit=1`
+      `https://nominatim.openstreetmap.org/search?postalcode=${newZipCode}&country=US&format=json&limit=1`
     )
       .then((res) => res.json())
       .then((data) => {
@@ -269,18 +261,12 @@ export default function FullPageMapClient() {
           ];
           setSearchMarker(position);
         } else {
-          alert("ZIP code not found. Please try another.");
+          console.warn("ZIP code not found:", newZipCode);
         }
       })
       .catch((err) => {
         console.error("Error searching ZIP:", err);
-        alert("Error searching for ZIP code. Please try again.");
       });
-  };
-
-  const handleClearSearch = () => {
-    setSearchQuery("");
-    setSearchMarker(null);
   };
 
   // Marker icons
@@ -420,11 +406,11 @@ export default function FullPageMapClient() {
   };
 
   return (
-    <>
+    <div className="relative h-full w-full">
       <MapContainer
         center={[40.7128, -74.006]}
         zoom={10}
-        className="h-full w-full"
+        className="h-full w-full z-0"
         zoomControl={false}
         scrollWheelZoom={true}
       >
@@ -452,7 +438,7 @@ export default function FullPageMapClient() {
             <Popup>
               <strong>Search Result</strong>
               <br />
-              ZIP: {searchQuery}
+              ZIP: {searchZip}
             </Popup>
           </Marker>
         )}
@@ -461,10 +447,8 @@ export default function FullPageMapClient() {
       </MapContainer>
 
       <MapControls
-        searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
-        onSearch={handleSearch}
-        onClearSearch={handleClearSearch}
+        searchZip={searchZip}
+        onLocationChange={handleLocationChange}
         showLegend={showLegend}
         onToggleLegend={() => setShowLegend(!showLegend)}
       />
@@ -476,6 +460,6 @@ export default function FullPageMapClient() {
         districtName={selectedDistrict.name}
         onClose={() => setSelectedDistrict({ data: null, name: null })}
       />
-    </>
+    </div>
   );
 }
