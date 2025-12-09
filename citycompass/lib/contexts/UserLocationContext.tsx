@@ -16,6 +16,7 @@ interface UserLocationContextType {
   loading: boolean;
   error: string | null;
   refreshLocation: () => Promise<void>;
+  updateLocation: (zipCode: string, borough?: string, neighborhood?: string) => Promise<void>;
 }
 
 const UserLocationContext = createContext<UserLocationContextType | undefined>(undefined);
@@ -133,6 +134,76 @@ export function UserLocationProvider({ children }: { children: React.ReactNode }
     await fetchLocation();
   }, [fetchLocation]);
 
+  const updateLocation = useCallback(
+    async (zipCode: string, borough?: string, neighborhood?: string): Promise<void> => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        const API_BASE = (process.env.NEXT_PUBLIC_API_BASE as string) || "http://127.0.0.1:8000";
+        const token = localStorage.getItem("token");
+
+        if (!token) {
+          throw new Error("No authentication token found");
+        }
+
+        // Call the backend to update user's location via a survey submission
+        const response = await fetch(`${API_BASE}/api/survey/submit`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          credentials: "include",
+          body: JSON.stringify({
+            zip_code: zipCode,
+            borough: borough || null,
+            neighborhood: neighborhood || null,
+            // Use default/empty values for other required survey fields
+            affordability: 5,
+            commute: 5,
+            safety: 5,
+            food_access: 5,
+            school_quality: 5,
+            noise: 5,
+            parks: 5,
+          }),
+        });
+
+        if (!response.ok) {
+          if (response.status === 401) {
+            throw new Error("Authentication failed. Please log in again.");
+          }
+          throw new Error(`Failed to update location: ${response.statusText}`);
+        }
+
+        // Update local state
+        const locationData: UserLocation = {
+          zipCode,
+          borough: borough || null,
+          neighborhood: neighborhood || null,
+          createdAt: new Date().toISOString(),
+        };
+
+        setLocation(locationData);
+
+        // Store in localStorage with timestamp
+        if (typeof window !== "undefined") {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(locationData));
+          localStorage.setItem(STORAGE_TIMESTAMP_KEY, Date.now().toString());
+        }
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : "Failed to update location";
+        setError(errorMessage);
+        console.error("Error updating user location:", err);
+        throw err; // Re-throw so caller can handle
+      } finally {
+        setLoading(false);
+      }
+    },
+    []
+  );
+
   const value: UserLocationContextType = {
     zipCode: location.zipCode,
     borough: location.borough,
@@ -140,6 +211,7 @@ export function UserLocationProvider({ children }: { children: React.ReactNode }
     loading,
     error,
     refreshLocation,
+    updateLocation,
   };
 
   return <UserLocationContext.Provider value={value}>{children}</UserLocationContext.Provider>;

@@ -3,64 +3,52 @@
 import InsightCard from "../components/InsightCard";
 import StaticNYCMap from "../components/StaticNYCMap";
 import { ScoreCard } from "../components/ScoreCard";
-import {
-  Leaf,
-  ShieldCheck,
-  Database,
-  MapPin,
-  Users,
-  DollarSign,
-  Calendar,
-  AlertCircle,
-} from "lucide-react";
+import { Leaf, ShieldCheck, Database, MapPin, Users, DollarSign, Calendar, AlertCircle } from "lucide-react";
 import useNeighborhoodACS from "../hooks/useNeighborhoodACS";
 import { useState, useEffect } from "react";
 import { useUserLocation } from "@/lib/contexts/UserLocationContext";
-import Link from "next/link";
+import { LocationSearchCombobox } from "../components/LocationSearchCombobox";
+import { LocationBadge } from "../components/LocationBadge";
+import { getDisplayNameForZip, type Location } from "@/lib/data/nyc-locations";
+import { inferBoroughFromZip } from "@/lib/actions/location";
 
 export default function DashboardPage() {
-  const {
-    zipCode,
-    neighborhood,
-    loading: locationLoading,
-    refreshLocation,
-  } = useUserLocation();
+  const { zipCode, neighborhood, loading: locationLoading, refreshLocation, updateLocation } = useUserLocation();
 
   // Use user's zip code or fallback to default
   const defaultZip = zipCode || "10001";
-  const {
-    data: acsData,
-    loading: acsLoading,
-    zip: acsZip,
-    setZip: setAcsZip,
-  } = useNeighborhoodACS(defaultZip);
 
-  // Update ACS zip when location changes
+  // State for viewing location (can be different from saved location)
+  const [viewingZip, setViewingZip] = useState<string>(defaultZip);
+  const [viewingLocation, setViewingLocation] = useState<Location | null>(null);
+  const [isUpdatingLocation, setIsUpdatingLocation] = useState(false);
+
+  // Update viewing zip when user's saved location changes
   useEffect(() => {
-    if (zipCode && zipCode !== acsZip) {
-      setAcsZip(zipCode);
+    if (zipCode && zipCode !== viewingZip) {
+      setViewingZip(zipCode);
+      setViewingLocation(null);
     }
-  }, [zipCode, acsZip, setAcsZip]);
+  }, [zipCode, viewingZip]);
 
-  // search input at top of page to change ZIP used across components
-  // Start empty on page load even though the hook defaults to ZIP 10001.
-  const [searchInput, setSearchInput] = useState<string>("");
+  const { data: acsData, loading: acsLoading, zip: acsZip, setZip: setAcsZip } = useNeighborhoodACS(viewingZip);
+
+  // Update ACS zip when viewing location changes
+  useEffect(() => {
+    if (viewingZip && viewingZip !== acsZip) {
+      setAcsZip(viewingZip);
+    }
+  }, [viewingZip, acsZip, setAcsZip]);
+
+  // Check if user is viewing a different location than their saved one
+  const isViewingDifferentLocation = viewingZip !== zipCode;
 
   // format values for the small ScoreCards
-  const population =
-    acsData?.total_population != null
-      ? acsData.total_population.toLocaleString()
-      : "—";
+  const population = acsData?.total_population != null ? acsData.total_population.toLocaleString() : "—";
   const medianIncome =
-    acsData?.median_household_income != null
-      ? `$${Number(acsData.median_household_income).toLocaleString()}`
-      : "—";
-  const medianAge =
-    acsData?.median_age != null ? acsData.median_age.toFixed(1) : "—";
-  const povertyRate =
-    acsData?.poverty_rate != null
-      ? `${(acsData.poverty_rate * 100).toFixed(1)}%`
-      : "—";
+    acsData?.median_household_income != null ? `$${Number(acsData.median_household_income).toLocaleString()}` : "—";
+  const medianAge = acsData?.median_age != null ? acsData.median_age.toFixed(1) : "—";
+  const povertyRate = acsData?.poverty_rate != null ? `${(acsData.poverty_rate * 100).toFixed(1)}%` : "—";
 
   // Helper functions for dynamic insights
   const getIncomeInsight = (income: number | null | undefined): string => {
@@ -94,119 +82,132 @@ export default function DashboardPage() {
   const popInsight = getPopInsight(acsData?.total_population);
   const povertyInsight = getPovertyInsight(acsData?.poverty_rate);
 
+  // Handle location search selection
+  const handleLocationChange = (newZipCode: string, location: Location | null) => {
+    setViewingZip(newZipCode);
+    setViewingLocation(location);
+  };
+
+  // Handle setting the viewing location as the user's saved location
+  const handleSetAsMyLocation = async () => {
+    if (!viewingZip) return;
+
+    setIsUpdatingLocation(true);
+    try {
+      const locationBorough = viewingLocation?.borough || inferBoroughFromZip(viewingZip);
+      const locationName = viewingLocation?.label || getDisplayNameForZip(viewingZip);
+
+      await updateLocation(viewingZip, locationBorough ?? undefined, locationName ?? undefined);
+      // Success - the context will update automatically
+    } catch (error) {
+      console.error("Failed to update location:", error);
+      alert("Failed to set location. Please try again.");
+    } finally {
+      setIsUpdatingLocation(false);
+    }
+  };
+
+  // Get display name for current viewing location
+  const viewingLocationName = viewingLocation?.label || getDisplayNameForZip(viewingZip);
+
   return (
     <div className="space-y-6">
       {/* Header */}
-      <header className="flex items-center justify-between">
+      <header className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold text-foreground">
-            Neighborhood Dashboard
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            Discover insights for New York City neighborhoods
-          </p>
+          <h1 className="text-2xl sm:text-3xl font-semibold text-foreground">Neighborhood Dashboard</h1>
+          <p className="text-sm text-muted-foreground mt-1">Discover insights for New York City neighborhoods</p>
         </div>
 
-        <div className="flex items-center gap-3">
-          {zipCode ? (
-            <div className="flex items-center gap-2 px-4 py-2 rounded-md bg-primary/10 border border-primary/20">
-              <MapPin className="w-4 h-4 text-primary" />
-              <div className="text-sm">
-                <span className="text-muted-foreground">
-                  Current Location:{" "}
-                </span>
-                <span className="font-semibold text-primary">{zipCode}</span>
-                {neighborhood && (
-                  <span className="text-muted-foreground ml-1">
-                    ({neighborhood})
-                  </span>
-                )}
+        <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+          {zipCode && (
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-muted/50 border border-border transition-all duration-200 hover:bg-muted">
+              <MapPin className="w-3.5 h-3.5 text-muted-foreground" />
+              <div className="text-xs">
+                <span className="text-muted-foreground">Saved: </span>
+                <span className="font-medium text-foreground">{zipCode}</span>
               </div>
             </div>
-          ) : (
-            <Link
-              href="/survey"
-              className="text-sm px-4 py-2 rounded-md bg-primary/10 hover:bg-primary/20 text-primary font-medium transition-colors"
-            >
-              Set Location
-            </Link>
           )}
           <button
             onClick={refreshLocation}
             disabled={locationLoading}
-            className="text-sm px-4 py-2 rounded-md bg-primary/10 hover:bg-primary/20 text-primary font-medium transition-colors disabled:opacity-50"
+            aria-label="Refresh your saved location"
+            className="text-xs px-3 py-1.5 rounded-md bg-muted hover:bg-muted/80 text-foreground font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed focus:ring-2 focus:ring-primary focus:ring-offset-2"
           >
             {locationLoading ? "Loading..." : "Refresh"}
           </button>
         </div>
       </header>
 
-      {/* Search Bar */}
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          const trimmed = searchInput.trim();
-          if (/^\d{5}$/.test(trimmed)) {
-            // update the hook's ZIP so data + ScoreCards re-fetch and re-render
-            setAcsZip(trimmed);
-            // optional: clear input after submit
-            setSearchInput("");
-          }
-        }}
-        className="flex gap-3 items-center"
-      >
-        <input
-          type="text"
-          placeholder="Search neighborhood, ZIP, or representative..."
-          className="flex-1 px-4 py-2 border border-input rounded-lg text-sm bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-          value={searchInput}
-          onChange={(e) => setSearchInput(e.target.value)}
-        />
-        <div className="flex gap-2">
-          {["Manhattan", "Safety", "Food Access"].map((tag) => (
-            <span
-              key={tag}
-              className="px-3 py-1 bg-muted text-muted-foreground rounded-full text-xs font-medium"
+      {/* Location Badge and Search */}
+      <div className="space-y-3">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <LocationBadge
+            zipCode={viewingZip}
+            locationName={viewingLocationName}
+            isUserLocation={!isViewingDifferentLocation}
+            className="w-full sm:w-auto"
+          />
+
+          {isViewingDifferentLocation && (
+            <button
+              onClick={handleSetAsMyLocation}
+              disabled={isUpdatingLocation}
+              aria-label="Set current viewing location as your saved location"
+              className="w-full sm:w-auto px-5 py-2.5 rounded-lg bg-primary text-primary-foreground font-medium text-sm hover:bg-primary/90 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow-md focus:ring-2 focus:ring-primary focus:ring-offset-2 whitespace-nowrap"
             >
-              {tag}
-            </span>
-          ))}
+              {isUpdatingLocation ? (
+                <span className="flex items-center justify-center gap-2">
+                  <span className="animate-spin">⏳</span>
+                  Saving...
+                </span>
+              ) : (
+                "Set as My Location"
+              )}
+            </button>
+          )}
         </div>
-      </form>
+
+        {/* Search Bar */}
+        <div className="w-full">
+          <LocationSearchCombobox value={viewingZip} onChange={handleLocationChange} disabled={locationLoading} />
+        </div>
+      </div>
 
       {/* Score Cards*/}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <ScoreCard
           title="Population"
-          value={population}
+          value={acsLoading ? "—" : population}
           subtitle={acsLoading ? "Loading…" : `ZIP: ${acsZip}`}
           icon={<Users className="w-4 h-4" />}
           color="blue"
-          insight={popInsight}
+          insight={acsLoading ? "—" : popInsight}
         />
         <ScoreCard
           title="Median income"
-          value={medianIncome}
+          value={acsLoading ? "—" : medianIncome}
           subtitle={acsLoading ? "Loading…" : `ZIP: ${acsZip}`}
           icon={<DollarSign className="w-4 h-4" />}
           color="green"
-          insight={incomeInsight}
+          insight={acsLoading ? "—" : incomeInsight}
         />
         <ScoreCard
           title="Median age"
-          value={medianAge}
+          value={acsLoading ? "—" : medianAge}
           subtitle={acsLoading ? "Loading…" : `ZIP: ${acsZip}`}
           icon={<Calendar className="w-4 h-4" />}
           color="purple"
-          insight={ageInsight}
+          insight={acsLoading ? "—" : ageInsight}
         />
         <ScoreCard
           title="Poverty rate"
-          value={povertyRate}
+          value={acsLoading ? "—" : povertyRate}
           subtitle={acsLoading ? "Loading…" : `ZIP: ${acsZip}`}
           icon={<AlertCircle className="w-4 h-4" />}
           color="amber"
-          insight={povertyInsight}
+          insight={acsLoading ? "—" : povertyInsight}
         />
       </div>
 
@@ -214,15 +215,11 @@ export default function DashboardPage() {
         {/* Left: Map Section */}
         <div className="col-span-2 bg-card rounded-2xl shadow-sm border border-border p-4">
           <div className="flex items-center justify-between mb-3">
-            <h2 className="font-medium text-foreground">
-              Neighborhood Overview
-            </h2>
-            <button className="text-sm text-primary hover:underline">
-              Full Map
-            </button>
+            <h2 className="font-medium text-foreground">Neighborhood Overview</h2>
+            <button className="text-sm text-primary hover:underline">Full Map</button>
           </div>
           <div className="w-full">
-            <StaticNYCMap currentZipCode={zipCode || undefined} />
+            <StaticNYCMap currentZipCode={viewingZip || undefined} />
           </div>
         </div>
 
@@ -230,9 +227,7 @@ export default function DashboardPage() {
         <div className="flex flex-col gap-4">
           <InsightCard
             color="green"
-            icon={
-              <Leaf className="w-4 h-4 text-green-600 dark:text-green-400" />
-            }
+            icon={<Leaf className="w-4 h-4 text-green-600 dark:text-green-400" />}
             title="Food Access Strength"
             description="Your neighborhood ranks higher than 70% in Food Access but scores 12 points lower than average in Safety."
             actionText="View Details"
@@ -240,9 +235,7 @@ export default function DashboardPage() {
 
           <InsightCard
             color="blue"
-            icon={
-              <ShieldCheck className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-            }
+            icon={<ShieldCheck className="w-4 h-4 text-blue-600 dark:text-blue-400" />}
             title="Safety Improvement"
             description="Safety projected to improve +4–6 points by April based on recent trends and city initiatives."
             actionText="See Forecast"
@@ -250,9 +243,7 @@ export default function DashboardPage() {
 
           <InsightCard
             color="amber"
-            icon={
-              <Database className="w-4 h-4 text-amber-600 dark:text-amber-400" />
-            }
+            icon={<Database className="w-4 h-4 text-amber-600 dark:text-amber-400" />}
             title="Data Update"
             description="New survey responses available. Your input helps improve neighborhood scoring accuracy."
             actionText="Take Survey"
