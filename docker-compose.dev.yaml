@@ -54,7 +54,7 @@ services:
       - GOOGLE_CLIENT_SECRET=dummy
       - MICROSOFT_CLIENT_ID=dummy
       - MICROSOFT_CLIENT_SECRET=dummy
-      - OLLAMA_HOST=http://host.docker.internal:11434
+      - GEMINI_API_KEY=AIzaSyAT33qeDqw48oN5t1gB5zLswJHruHCrEbM
 
     extra_hosts:
       - "host.docker.internal:host-gateway"
