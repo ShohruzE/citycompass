@@ -1,72 +1,101 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { TrendingUp } from "lucide-react";
+import { TrendingUp, AlertCircle } from "lucide-react";
 import useNeighborhoodACS from "../hooks/useNeighborhoodACS";
 import StaticNYCMap from "./StaticNYCMap";
+import zipToDistrict from "@/lib/data/nyc-zip-to-district.json";
+
+// Helper function to check if ZIP code is in NYC
+const isNYCZipCode = (zip: string): boolean => {
+  return zip in zipToDistrict;
+};
 
 export default function CompareView() {
   const [zipA, setZipA] = useState("10001");
   const [zipB, setZipB] = useState("11211");
+  const [isANYC, setIsANYC] = useState(true);
+  const [isBNYC, setIsBNYC] = useState(true);
 
   const a = useNeighborhoodACS(zipA);
   const b = useNeighborhoodACS(zipB);
 
-  const [nsqiA] = useState<number | null>(null);
-  const [nsqiB] = useState<number | null>(null);
-  const [nsqiLoadingA] = useState(false);
-  const [nsqiLoadingB] = useState(false);
+  // Validate ZIP codes on change
+  useEffect(() => {
+    setIsANYC(isNYCZipCode(zipA));
+  }, [zipA]);
 
-  // NEED TO FIX NSQI FETCHING
+  useEffect(() => {
+    setIsBNYC(isNYCZipCode(zipB));
+  }, [zipB]);
 
-  // useEffect(() => {
-  //   async function fetchNsqiForZip(
-  //     zip: string,
-  //     setter: (v: number | null) => void,
-  //     setLoading: (b: boolean) => void
-  //   ) {
-  //     setLoading(true);
-  //     try {
-  //       const API_BASE =
-  //         (process.env.NEXT_PUBLIC_API_BASE as string) ||
-  //         "http://127.0.0.1:8000";
-  //       const res = await fetch(
-  //         `${API_BASE}/api/ml/predict?community_district=${encodeURIComponent(
-  //           zip
-  //         )}`
-  //       );
-  //       if (!res.ok) {
-  //         setter(null);
-  //         return;
-  //       }
-  //       const json = await res.json();
+  const [nsqiA, setNsqiA] = useState<number | null>(null);
+  const [nsqiB, setNsqiB] = useState<number | null>(null);
+  const [nsqiLoadingA, setNsqiLoadingA] = useState(false);
+  const [nsqiLoadingB, setNsqiLoadingB] = useState(false);
 
-  //       // Accept multiple possible response shapes
-  //       let score: number | null = null;
-  //       if (typeof json?.score === "number") score = json.score;
-  //       else if (typeof json?.nsqi === "number") score = json.nsqi;
-  //       else if (typeof json?.pred === "number") score = json.pred;
-  //       else if (typeof json?.prediction === "number") score = json.prediction;
-  //       else if (
-  //         Array.isArray(json?.predictions) &&
-  //         typeof json.predictions[0]?.score === "number"
-  //       )
-  //         score = json.predictions[0].score;
-  //       else if (typeof json === "number") score = json;
+  // Fetch NSQI for a ZIP code by mapping to community district
+  useEffect(() => {
+    async function fetchNsqiForZip(
+      zip: string,
+      setter: (v: number | null) => void,
+      setLoading: (b: boolean) => void
+    ) {
+      setLoading(true);
+      try {
+        // Map ZIP to community district
+        const districtID = zipToDistrict[zip as keyof typeof zipToDistrict];
 
-  //       setter(score);
-  //     } catch (err) {
-  //       console.error("NSQI fetch failed:", err);
-  //       setter(null);
-  //     } finally {
-  //       setLoading(false);
-  //     }
-  //   }
+        if (!districtID) {
+          console.warn(`No community district found for ZIP: ${zip}`);
+          setter(null);
+          setLoading(false);
+          return;
+        }
 
-  //   fetchNsqiForZip(zipA, setNsqiA, setNsqiLoadingA);
-  //   fetchNsqiForZip(zipB, setNsqiB, setNsqiLoadingB);
-  // }, [zipA, zipB]);
+        const API_BASE = "http://localhost:8000";
+        const res = await fetch(
+          `${API_BASE}/api/ml/predict?community_district=${encodeURIComponent(
+            districtID
+          )}`
+        );
+
+        if (!res.ok) {
+          console.error(`Failed to fetch NSQI for district ${districtID}`);
+          setter(null);
+          setLoading(false);
+          return;
+        }
+
+        const json = await res.json();
+
+        // Extract score from various possible response shapes
+        let score: number | null = null;
+        if (typeof json?.score === "number") score = json.score;
+        else if (typeof json?.nsqi === "number") score = json.nsqi;
+        else if (typeof json?.percentile === "number") score = json.percentile;
+        else if (typeof json?.pred === "number") score = json.pred;
+        else if (typeof json?.prediction === "number") score = json.prediction;
+        else if (
+          Array.isArray(json?.predictions) &&
+          typeof json.predictions[0]?.score === "number"
+        )
+          score = json.predictions[0].score;
+        else if (typeof json === "number") score = json;
+
+        setter(score);
+      } catch (err) {
+        console.error("NSQI fetch failed:", err);
+        setter(null);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchNsqiForZip(zipA, setNsqiA, setNsqiLoadingA);
+    fetchNsqiForZip(zipB, setNsqiB, setNsqiLoadingB);
+  }, [zipA, zipB]);
 
   const compare = (
     aVal?: number | null,
@@ -154,11 +183,18 @@ export default function CompareView() {
             Neighborhood / ZIP A
           </label>
           <input
-            className="w-full px-3 py-2 border rounded"
+            className={`w-full px-3 py-2 border rounded ${
+              !isANYC ? "border-red-400 bg-red-50" : ""
+            }`}
             placeholder="Enter ZIP (e.g., 10003)"
             value={zipA}
             onChange={(e) => setZipA(e.target.value)}
           />
+          {!isANYC && (
+            <p className="text-xs text-red-600 mt-1 flex items-center gap-1">
+              <AlertCircle size={14} /> Not a NYC ZIP code
+            </p>
+          )}
         </div>
 
         <div className="flex-1">
@@ -166,16 +202,24 @@ export default function CompareView() {
             Neighborhood / ZIP B
           </label>
           <input
-            className="w-full px-3 py-2 border rounded"
+            className={`w-full px-3 py-2 border rounded ${
+              !isBNYC ? "border-red-400 bg-red-50" : ""
+            }`}
             placeholder="Enter ZIP (e.g., 11211)"
             value={zipB}
             onChange={(e) => setZipB(e.target.value)}
           />
+          {!isBNYC && (
+            <p className="text-xs text-red-600 mt-1 flex items-center gap-1">
+              <AlertCircle size={14} /> Not a NYC ZIP code
+            </p>
+          )}
         </div>
 
         <div>
           <button
-            className="text-sm px-4 py-2 rounded-md bg-primary text-primary-foreground hover:bg-primary/90"
+            disabled={!isANYC || !isBNYC}
+            className="text-sm px-4 py-2 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
             onClick={() => {
               a.setZip(zipA);
               b.setZip(zipB);
@@ -243,9 +287,34 @@ export default function CompareView() {
         </Card>
       </div>
 
-      <div className="bg-card rounded-2xl p-4 border border-border">
-        <StaticNYCMap currentZipCode={zipA} />
-      </div>
+      {isANYC && isBNYC && (
+        <div className="bg-card rounded-2xl p-4 border border-border">
+          <StaticNYCMap currentZipCode={zipA} compareZipCode={zipB} />
+        </div>
+      )}
+
+      {(!isANYC || !isBNYC) && (
+        <Card className="border-yellow-200 bg-yellow-50">
+          <CardContent className="pt-6 flex items-start gap-3">
+            <AlertCircle
+              className="text-yellow-600 mt-0.5 flex-shrink-0"
+              size={20}
+            />
+            <div>
+              <p className="font-semibold text-yellow-900">
+                Non-NYC ZIP Code Detected
+              </p>
+              <p className="text-sm text-yellow-800 mt-1">
+                {!isANYC && !isBNYC
+                  ? "Both ZIP codes must be within New York City to view the map and quality score comparison."
+                  : !isANYC
+                  ? "ZIP Code A is not in New York City. The map and quality score for this area will not be available."
+                  : "ZIP Code B is not in New York City. The map and quality score for this area will not be available."}
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <Card className="border-slate-200 bg-slate-50">
         <CardHeader>
