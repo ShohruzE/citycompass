@@ -12,9 +12,19 @@ import {
 import L, { Layer, PathOptions } from "leaflet";
 import type { FeatureCollection, Feature } from "geojson";
 import "leaflet/dist/leaflet.css";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import { useUserLocation } from "@/lib/contexts/UserLocationContext";
-import { Search, X, MapPin, Info, Layers } from "lucide-react";
+import { Search, X, MapPin, Info, Layers, Check } from "lucide-react";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import { allLocations } from "@/lib/data/nyc-locations";
+import { cn } from "@/lib/utils";
 
 // Fix for default marker icon
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -49,41 +59,124 @@ interface DistrictData {
 interface MapControlsProps {
   searchQuery: string;
   onSearchChange: (value: string) => void;
-  onSearch: () => void;
+  onSelectZip: (zipCode: string) => void;
   onClearSearch: () => void;
   showLegend: boolean;
   onToggleLegend: () => void;
 }
 
+// Get all NYC ZIP codes
+const NYC_ZIP_CODES = allLocations
+  .filter((loc) => loc.type === "zip")
+  .map((loc) => loc.zipCode)
+  .sort();
+
 function MapControls({
   searchQuery,
   onSearchChange,
-  onSearch,
+  onSelectZip,
   onClearSearch,
   showLegend,
   onToggleLegend,
 }: MapControlsProps) {
+  const [showDropdown, setShowDropdown] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Filter ZIP codes based on search query
+  const filteredZipCodes = useMemo(() => {
+    if (!searchQuery.trim()) return [];
+    const query = searchQuery.toLowerCase();
+    return NYC_ZIP_CODES.filter((zip) => zip.includes(query)).slice(0, 20);
+  }, [searchQuery]);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
+        setShowDropdown(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const handleSelectZip = (zipCode: string) => {
+    onSelectZip(zipCode);
+    setShowDropdown(false);
+  };
+
   return (
     <div className="absolute top-4 left-4 z-[1000] flex gap-2">
-      <div className="bg-white rounded-lg shadow-lg p-2 flex items-center gap-2">
-        <Search className="h-5 w-5 text-gray-500" />
-        <input
-          type="text"
-          placeholder="Search by ZIP code..."
-          value={searchQuery}
-          onChange={(e) => onSearchChange(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && onSearch()}
-          className="outline-none text-sm w-48"
-        />
-        {searchQuery && (
-          <button
-            onClick={onClearSearch}
-            className="p-1 hover:bg-gray-100 rounded"
-          >
-            <X className="h-4 w-4 text-gray-500" />
-          </button>
+      <div className="relative" ref={dropdownRef}>
+        <div className="bg-white rounded-lg shadow-lg p-2 flex items-center gap-2 w-64">
+          <Search className="h-5 w-5 text-gray-500 flex-shrink-0" />
+          <input
+            type="text"
+            placeholder="Search NYC ZIP code..."
+            value={searchQuery}
+            onChange={(e) => {
+              onSearchChange(e.target.value);
+              setShowDropdown(true);
+            }}
+            onFocus={() => setShowDropdown(true)}
+            className="outline-none text-sm flex-1"
+            autoComplete="off"
+          />
+          {searchQuery && (
+            <button
+              onClick={() => {
+                onClearSearch();
+                setShowDropdown(false);
+              }}
+              className="p-1 hover:bg-gray-100 rounded flex-shrink-0"
+            >
+              <X className="h-4 w-4 text-gray-500" />
+            </button>
+          )}
+        </div>
+
+        {/* Autocomplete Dropdown */}
+        {showDropdown && searchQuery && filteredZipCodes.length > 0 && (
+          <div className="absolute top-full mt-1 w-full bg-white rounded-lg shadow-xl border border-gray-200 max-h-60 overflow-y-auto">
+            <Command className="rounded-lg border-none">
+              <CommandList>
+                <CommandGroup>
+                  {filteredZipCodes.map((zip) => (
+                    <CommandItem
+                      key={zip}
+                      value={zip}
+                      onSelect={() => handleSelectZip(zip)}
+                      className="cursor-pointer"
+                    >
+                      <MapPin className="mr-2 h-4 w-4 text-blue-600" />
+                      <span>{zip}</span>
+                      {searchQuery === zip && (
+                        <Check className="ml-auto h-4 w-4 text-blue-600" />
+                      )}
+                    </CommandItem>
+                  ))}
+                </CommandGroup>
+              </CommandList>
+            </Command>
+          </div>
         )}
+
+        {/* No results message */}
+        {showDropdown &&
+          searchQuery &&
+          searchQuery.length > 0 &&
+          filteredZipCodes.length === 0 && (
+            <div className="absolute top-full mt-1 w-full bg-white rounded-lg shadow-xl border border-gray-200 p-3">
+              <p className="text-sm text-gray-500 text-center">
+                No NYC ZIP codes found. Try a different search.
+              </p>
+            </div>
+          )}
       </div>
+
       <button
         onClick={onToggleLegend}
         className={`bg-white rounded-lg shadow-lg p-2 hover:bg-gray-50 transition-colors ${
@@ -254,11 +347,13 @@ export default function FullPageMapClient() {
     }
   }, [zipCode]);
 
-  const handleSearch = () => {
-    if (!searchQuery.trim()) return;
+  const handleSelectZip = (zipCode: string) => {
+    // Update search query with selected ZIP
+    setSearchQuery(zipCode);
 
+    // Geocode the selected ZIP code
     fetch(
-      `https://nominatim.openstreetmap.org/search?postalcode=${searchQuery}&country=US&format=json&limit=1`
+      `https://nominatim.openstreetmap.org/search?postalcode=${zipCode}&country=US&format=json&limit=1`
     )
       .then((res) => res.json())
       .then((data) => {
@@ -463,7 +558,7 @@ export default function FullPageMapClient() {
       <MapControls
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
-        onSearch={handleSearch}
+        onSelectZip={handleSelectZip}
         onClearSearch={handleClearSearch}
         showLegend={showLegend}
         onToggleLegend={() => setShowLegend(!showLegend)}
