@@ -14,7 +14,7 @@ import type { FeatureCollection, Feature } from "geojson";
 import "leaflet/dist/leaflet.css";
 import { useEffect, useState } from "react";
 import { useUserLocation } from "@/lib/contexts/UserLocationContext";
-import { MapPin, Info, Layers } from "lucide-react";
+import { MapPin, Info, Layers, X } from "lucide-react";
 import { LocationSearchCombobox } from "./LocationSearchCombobox";
 import type { Location } from "@/lib/data/nyc-locations";
 

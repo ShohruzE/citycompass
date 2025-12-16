@@ -56,7 +56,7 @@ export function UserLocationProvider({ children }: { children: React.ReactNode }
         credentials: "include",
       });
 
-      if (!response.ok) {
+      if (!response.ok && response.status >= 400) {
         if (response.status === 401) {
           throw new Error("Authentication failed. Please log in again.");
         }
