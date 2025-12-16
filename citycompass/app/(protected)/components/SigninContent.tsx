@@ -1,5 +1,3 @@
-
-
 "use client";
 
 import { Button } from "@/components/ui/button";
@@ -8,7 +6,8 @@ import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 
 async function testing() {
-  const API_BASE = (process.env.NEXT_PUBLIC_API_BASE as string) || "http://localhost:8000";
+  const API_BASE =
+    (process.env.NEXT_PUBLIC_API_BASE as string) || "http://localhost:8000";
   const response = await fetch(`${API_BASE}/auth/test`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -17,18 +16,17 @@ async function testing() {
   console.log(await response.json());
 }
 
-const SigninContent =  () => {
-
-const searchParams = useSearchParams();
+const SigninContent = () => {
+  const searchParams = useSearchParams();
   const error = searchParams.get("error");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
-  const API_BASE = (process.env.NEXT_PUBLIC_API_BASE as string) || "http://localhost:8000";
+  const API_BASE =
+    (process.env.NEXT_PUBLIC_API_BASE as string) || "http://localhost:8000";
 
   testing();
-
 
   useEffect(() => {
     if (error === "auth_failed") {
@@ -120,7 +118,9 @@ const searchParams = useSearchParams();
   return (
     <div className="flex flex-col justify-center items-center min-h-[calc(100vh-64px)] text-center px-6 pt-8 pb-8 bg-background text-foreground">
       <h2 className="text-3xl font-bold mb-4">Welcome back</h2>
-      <p className="text-muted-foreground mb-6">Sign in to continue exploring NYC insights</p>
+      <p className="text-muted-foreground mb-6">
+        Sign in to continue exploring NYC insights
+      </p>
 
       <div className="flex flex-col gap-3 w-full max-w-sm">
         <form
@@ -211,7 +211,10 @@ const searchParams = useSearchParams();
         </p>
 
         <div className="text-center mt-4">
-          <Link href="/forgot-password" className="text-primary hover:underline">
+          <Link
+            href="/forgot-password"
+            className="text-primary hover:underline"
+          >
             Forgot your password?
           </Link>
         </div>
@@ -221,6 +224,7 @@ const searchParams = useSearchParams();
         </p>
       </div>
     </div>
-  )}
+  );
+};
 
-  export default SigninContent
+export default SigninContent;
