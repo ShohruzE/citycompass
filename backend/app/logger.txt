@@ -1,0 +1,49 @@
+import requests
+import json
+from dotenv import load_dotenv
+import os
+from datetime import datetime
+
+load_dotenv()
+SUMO_URL = os.getenv('SUMO_LOGIC_URL')
+# print("SUMO_URL")
+assert SUMO_URL
+
+def log_to_sumo(level, message, metadata=None):
+    if not SUMO_URL:
+        return
+    
+    # Create a log line (plain text, not JSON in body)
+    timestamp = datetime.utcnow().isoformat()
+    
+    # Format as a structured log line
+    log_entry = f"{timestamp} [{level}] {message}"
+    
+    # Add metadata if provided
+    if metadata:
+        log_entry += f" | {json.dumps(metadata)}"
+    
+    headers = {
+        'X-Sumo-Name': 'fastapi-backend',
+        'X-Sumo-Category': 'web-app/backend',
+        'Content-Type': 'text/plain'
+    }
+    
+    # Add custom fields as metadata
+    if metadata:
+        # Convert metadata to comma-separated key=value pairs
+        fields = ','.join([f"{k}={v}" for k, v in metadata.items()])
+        headers['X-Sumo-Fields'] = fields
+    
+    try:
+        # Send as plain text body
+        response = requests.post(
+            SUMO_URL, 
+            data=log_entry,  # Use 'data' not 'json'
+            headers=headers,
+            timeout=2
+        )
+        response.raise_for_status()
+    except Exception as e:
+        # Silent fail - don't break your app
+        print(f"Failed to send log to Sumo: {e}")

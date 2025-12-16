@@ -6,14 +6,16 @@ import { useState } from "react";
 
 export default function SignUpPage() {
   const [errorMessage, setErrorMessage] = useState("");
+  const [signUpSuccess, setSignUpSuccess] = useState(false);
+  const API_BASE = (process.env.API_BASE_URL as string) || "http://localhost:8000";
 
   const handleGoogleSignUp = () => {
     try {
       setErrorMessage("");
 
       // const backendURL = {process.env.BACKEND_URL};
-      const backendURL = "http://127.0.0.1:8000";
-      window.location.href = `${backendURL}/auth/google-login`;
+      // const backendURL = "http://127.0.0.1:8000";
+      window.location.href = `${API_BASE}/auth/google-login`;
     } catch {
       setErrorMessage("failed to initiate Google Sign in");
     }
@@ -24,11 +26,14 @@ export default function SignUpPage() {
       setErrorMessage("");
 
       // const backendURL = {process.env.BACKEND_URL};
-      const backendURL = "http://localhost:8000";
-      window.location.href = `${backendURL}/auth/ms-login`;
+      window.location.href = `${API_BASE}/auth/ms-login`;
     } catch {
       setErrorMessage("failed to initiate Google Sign in");
     }
+    setTimeout(() => {
+      window.location.href = "/survey";
+    }, 1000);
+    // console.log('cookie', data);
   };
 
   const handleEmailSignup = async (formData: FormData) => {
@@ -38,9 +43,7 @@ export default function SignUpPage() {
 
       setErrorMessage("");
 
-      const backendURL = "http://127.0.0.1:8000/auth/register";
-
-      const response = await fetch(backendURL, {
+      const response = await fetch(`${API_BASE}/auth/register`, {
         credentials: "include",
         method: "POST",
         headers: {
@@ -58,22 +61,30 @@ export default function SignUpPage() {
         throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
       }
 
-      await response.json();
-      // console.log('Login successful:', data);
+      setSignUpSuccess(true);
 
-      // Store token if your backend returns one
+      // Automatically log in the user after successful signup
+      const loginResponse = await fetch(`${API_BASE}/auth/email-auth`, {
+        credentials: "include",
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          username: email,
+          password: password,
+        }),
+      });
 
-      // localStorage.setItem('token', data.cookie);
+      if (loginResponse.ok) {
+        const loginData = await loginResponse.json();
+        localStorage.setItem("token", loginData.token);
 
-      // Redirect or update UI on success
-      console.log("Cookies after login:", document.cookie);
-
-      // Wait a moment then redirect
-      setTimeout(() => {
-        window.location.href = "/dashboard";
-      }, 1000);
-      // console.log('cookie', data);
-      console.log("All cookies:", document.cookie);
+        // New users always go to survey (has_survey will be false)
+        setTimeout(() => {
+          window.location.href = "/survey";
+        }, 1500);
+      }
     } catch (err) {
       console.error("Login error:", err);
       setErrorMessage(err instanceof Error ? err.message : "Failed to sign in with email");
@@ -88,7 +99,7 @@ export default function SignUpPage() {
       </p>
 
       <div className="flex flex-col gap-3 w-full max-w-sm">
-        <form action={handleEmailSignup}>
+        <form className="flex flex-col gap-3 w-full max-w-sm" action={handleEmailSignup}>
           <input
             type="email"
             name="email"
@@ -105,6 +116,21 @@ export default function SignUpPage() {
             Create Account
           </Button>
         </form>
+
+        {signUpSuccess && (
+          <div className="w-full max-w-sm p-6 bg-green-50 border border-green-200 rounded-md">
+            <p className="text-green-700 font-semibold mb-4">Sign up successful!</p>
+            <Link href="/sign-in">
+              <Button className="w-full bg-primary text-primary-foreground hover:bg-primary/80">Go to Sign In</Button>
+            </Link>
+          </div>
+        )}
+
+        {errorMessage && (
+          <div className="w-full max-w-sm mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
+            <p className="text-red-600 text-sm">{errorMessage}</p>
+          </div>
+        )}
 
         <button
           onClick={handleGoogleSignUp}
