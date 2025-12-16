@@ -10,7 +10,7 @@ from typing import Annotated
 import re
 
 # connect to Postgres Database and read JSON from responses
-from app.core.db import get_db
+from app.core.db import SessionLocal, get_db
 from pydantic import BaseModel
 from starlette.config import Config
 from authlib.integrations.starlette_client import OAuth, OAuthError
@@ -59,10 +59,8 @@ SECRET_KEY = os.getenv("SECRET_KEY")
 # assert SECRET_KEY, "SECRET_KEY not set"
 ALGORITHM = 'HS256'
 RESET_TOKEN_EXPIRE_MINUTES = 15  # Token expires in 15 minutes
-RESEND_API_KEY = os.getenv('RESEND_API_KEY')   # Your Resend API key
-FRONTEND_URL = os.getenv('FRONTEND_URL')   # Your frontend URL
+FRONTEND_URL = os.getenv('FRONTEND_URL') or "http://localhost:3000"   # Your frontend URL
 
-resend.api_key = RESEND_API_KEY
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -283,7 +281,7 @@ async def google_auth(request: Request, db:db_dependency):
     # token = create_access_token(user.email, db_user.id, timedelta(minutes=30))
     token = create_access_token(db_user.username, db_user.id, timedelta(minutes=30))
     
-    redirect_url = f"http://localhost:3000/dashboard?token={token}&user={db_user.username}"
+    redirect_url = f"{FRONTEND_URL}/dashboard?token={token}&user={db_user.username}"
 
     return RedirectResponse(url=redirect_url)
 
@@ -315,51 +313,42 @@ async def ms_auth(request: Request, db: db_dependency):
             "family_name": user_data.get("surname"),
         }
     except OAuthError as error:
-        logging.error(user.email + "login error occurred" + error)
+        logging.error(user["email"] + "login error occurred" + error)
         return RedirectResponse(
-                url="http://localhost:3000/sign-in?error=auth_failed"
+                # redirect_url = f"{FRONTEND_URL}/dashboard?token={token}&user={db_user.username}"
+
+                url=f"{FRONTEND_URL}/sign-in?error=auth_failed"
             )
     except Exception as error:
-        logging.error(user.email + "login error occurred" + error)
+        logging.error(user["email"] + "login error occurred" + error)
         return RedirectResponse(
-                url="http://localhost:3000/sign-in?error=ms_server_error"
+                url=f"{FRONTEND_URL}/sign-in?error=ms_server_error"
             )
 
 
     try:
         db_user = authenticate_sso_user(user["email"], db)
-        print("db_user: ", db_user)
+        # print("db_user: ", db_user)
         if db_user == False:
-            logging.info(user.email + " not found in db, gmail user is being added to database")
+            logging.info(user["email"] + " not found in db, gmail user is being added to database")
             create_microsoft_user(user["email"],db)
             db_user = authenticate_sso_user(user["email"], db)
         else:
-            logging.info( "user successfully created/found with the following id: " + db_user.id)
+            logging.info( "user successfully created/found with the following id: " + str(db_user.id))
     except Exception as error:
         logging.error( f"OAuth error: {str(error)}")
         # print(f"OAuth error: {str(error)}")
-        return RedirectResponse("http://localhost:3000/sign-up?error=server_error")
+        return RedirectResponse(f"{FRONTEND_URL}/sign-up?error=server_error")
     except error:
         logging.error(error)
         # print(error)
 
-    token = create_access_token(user["email"], db_user.id, timedelta(minutes=30))
-    response = RedirectResponse(url="http://localhost:3000/dashboard")
- 
-    # response.set_cookie(
-        
-    #     'access_token',
-    #     token,
-    #     expires= timedelta(minutes=30),
-    #     path="/",
-    #     domain="localhost",
-    #     httponly=False,  # Can't be accessed by JavaScript (more secure)
-    #     secure=False,    # Only sent over HTTPS (use False in development)
-    #     samesite='Lax',
-    # )
+    token = create_access_token(db_user.username, db_user.id, timedelta(minutes=30))
     
-    return response
+    redirect_url = f"{FRONTEND_URL}/dashboard?token={token}&user={db_user.username}"
 
+    return RedirectResponse(url=redirect_url)
+ 
 
 """
     output: removes user information and redirects back to the root
@@ -370,11 +359,19 @@ async def ms_auth(request: Request, db: db_dependency):
 async def logout(request: Request, response: Response):
     logging.info("user sign out initiated")
     request.session.pop("user", None)
+
     response.delete_cookie(
         key="access_token",  # Your session cookie name
         path="/",
         domain="localhost",  # Match your cookie domain
     )
+
+    response.delete_cookie(
+        key="token",  # Your session cookie name
+        path="/",
+        domain="localhost",  # Match your cookie domain
+    )
+
 
     return {"message": "Logged out successfully"}
     # return RedirectResponse(url="http://localhost:3000")
@@ -511,7 +508,7 @@ async def login_for_access_token(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Could not validate user."
         )
     token = create_access_token(user.username, user.id, timedelta(minutes=30))
-    return {"access_token": token, "token_type": "bearer"}
+    return {"token": token, "token_type": "bearer"}
 
 
 # @router.post("/login", response_model=Token)
@@ -527,7 +524,7 @@ async def login_for_access_token(
 
 @router.post("/verify-token", response_model=Token)
 async def verify_token(request: Request, db: db_dependency):
-    token = request.cookies.get("access_token")
+    token = request.cookies.get("token")
     if not token:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated"
