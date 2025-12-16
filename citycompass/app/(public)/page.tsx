@@ -2,9 +2,13 @@
 
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import HomepageHeroSection from "../components/HomepageHeroSection";
+import FeatureGrid from "../components/FeatureGrid";
+import PlatformImpact from "../components/PlatformImpact";
+import Footer from "../components/Footer";
 
 export default function LandingPage() {
-  return (
+  return (<>
     <section className="max-w-5xl mx-auto text-center mt-24 px-6 text-foreground">
       <h1 className="text-5xl font-bold leading-tight">
         Understanding NYC{" "}
@@ -15,7 +19,7 @@ export default function LandingPage() {
         Empowering residents, policymakers, and city officials with data-driven insights
         about neighborhood safety, cleanliness, and quality of life.
       </p>
-
+    
       <div className="mt-8 flex justify-center gap-4">
         <Link href="/sign-up">
           <Button className="bg-primary text-primary-foreground hover:bg-primary/80">
@@ -29,5 +33,9 @@ export default function LandingPage() {
         </Link>
       </div>
     </section>
+      <FeatureGrid />
+      <PlatformImpact />
+      <Footer />
+      </>
   );
 }
