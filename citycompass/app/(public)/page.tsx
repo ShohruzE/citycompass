@@ -2,7 +2,6 @@
 
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import HomepageHeroSection from "../components/HomepageHeroSection";
 import FeatureGrid from "../components/FeatureGrid";
 import PlatformImpact from "../components/PlatformImpact";
 import Footer from "../components/Footer";
