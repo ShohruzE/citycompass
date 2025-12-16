@@ -5,31 +5,11 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { surveyFormSchema, type SurveyFormData } from "@/lib/schemas/survey";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
@@ -55,9 +35,7 @@ export function SurveyForm() {
   const [serverError, setServerError] = useState<string | null>(null);
   const [hasExistingSurvey, setHasExistingSurvey] = useState(false);
   const [isLoadingExisting, setIsLoadingExisting] = useState(true);
-  const [savedData, setSavedData, clearSavedData] = useLocalStorage<
-    Partial<SurveyFormData>
-  >(STORAGE_KEY, {});
+  const [savedData, setSavedData, clearSavedData] = useLocalStorage<Partial<SurveyFormData>>(STORAGE_KEY, {});
   const { refreshLocation } = useUserLocation();
 
   const form = useForm<SurveyFormData>({
@@ -106,8 +84,7 @@ export function SurveyForm() {
           return;
         }
 
-        const API_BASE =
-          process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8000";
+        const API_BASE = process.env.API_BASE_URL || "http://localhost:8000";
         const response = await fetch(`${API_BASE}/api/survey/my-surveys`, {
           method: "GET",
           headers: {
@@ -198,10 +175,7 @@ export function SurveyForm() {
   useEffect(() => {
     if (Object.keys(savedData).length > 0) {
       Object.entries(savedData).forEach(([key, value]) => {
-        form.setValue(
-          key as keyof SurveyFormData,
-          value as SurveyFormData[keyof SurveyFormData]
-        );
+        form.setValue(key as keyof SurveyFormData, value as SurveyFormData[keyof SurveyFormData]);
       });
     }
   }, [savedData, form]);
@@ -219,14 +193,7 @@ export function SurveyForm() {
 
     switch (currentStep) {
       case 0:
-        isValid = await form.trigger([
-          "name",
-          "age",
-          "borough",
-          "neighborhood",
-          "zipCode",
-          "residencyDuration",
-        ]);
+        isValid = await form.trigger(["name", "age", "borough", "neighborhood", "zipCode", "residencyDuration"]);
         break;
       case 1:
         isValid = await form.trigger([
@@ -306,8 +273,7 @@ export function SurveyForm() {
         return;
       }
 
-      const API_BASE =
-        process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8000";
+      const API_BASE = process.env.API_BASE_URL || "http://localhost:8000";
 
       const response = await fetch(`${API_BASE}/api/survey`, {
         method: "POST",
@@ -321,9 +287,7 @@ export function SurveyForm() {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(
-          errorData.detail || `HTTP error! status: ${response.status}`
-        );
+        throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
       }
 
       const result = await response.json();
@@ -341,11 +305,7 @@ export function SurveyForm() {
       window.location.href = "/dashboard";
     } catch (error) {
       console.error("Error submitting survey:", error);
-      setServerError(
-        error instanceof Error
-          ? error.message
-          : "Failed to submit survey. Please try again."
-      );
+      setServerError(error instanceof Error ? error.message : "Failed to submit survey. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
@@ -372,12 +332,9 @@ export function SurveyForm() {
             <div className="flex items-start gap-3 p-3 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-md">
               <AlertCircle className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
               <div>
-                <p className="font-medium text-blue-900 dark:text-blue-100">
-                  You've already completed this survey
-                </p>
+                <p className="font-medium text-blue-900 dark:text-blue-100">You've already completed this survey</p>
                 <p className="text-sm text-blue-800 dark:text-blue-200 mt-1">
-                  You can update your responses and submit again. Your previous
-                  answers are shown below.
+                  You can update your responses and submit again. Your previous answers are shown below.
                 </p>
               </div>
             </div>
@@ -434,9 +391,7 @@ export function SurveyForm() {
                             type="number"
                             placeholder="25"
                             {...field}
-                            onChange={(e) =>
-                              field.onChange(parseInt(e.target.value) || 0)
-                            }
+                            onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
                           />
                         </FormControl>
                         <FormMessage />
@@ -452,10 +407,7 @@ export function SurveyForm() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Borough *</FormLabel>
-                        <Select
-                          onValueChange={field.onChange}
-                          value={field.value}
-                        >
+                        <Select onValueChange={field.onChange} value={field.value}>
                           <FormControl>
                             <SelectTrigger>
                               <SelectValue placeholder="Select borough" />
@@ -466,9 +418,7 @@ export function SurveyForm() {
                             <SelectItem value="Brooklyn">Brooklyn</SelectItem>
                             <SelectItem value="Queens">Queens</SelectItem>
                             <SelectItem value="Bronx">Bronx</SelectItem>
-                            <SelectItem value="Staten Island">
-                              Staten Island
-                            </SelectItem>
+                            <SelectItem value="Staten Island">Staten Island</SelectItem>
                           </SelectContent>
                         </Select>
                         <FormMessage />
@@ -512,22 +462,15 @@ export function SurveyForm() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>How long have you lived here? *</FormLabel>
-                        <Select
-                          onValueChange={field.onChange}
-                          value={field.value}
-                        >
+                        <Select onValueChange={field.onChange} value={field.value}>
                           <FormControl>
                             <SelectTrigger>
                               <SelectValue placeholder="Select duration" />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value="< 6 months">
-                              Less than 6 months
-                            </SelectItem>
-                            <SelectItem value="6-12 months">
-                              6-12 months
-                            </SelectItem>
+                            <SelectItem value="< 6 months">Less than 6 months</SelectItem>
+                            <SelectItem value="6-12 months">6-12 months</SelectItem>
                             <SelectItem value="1-3 years">1-3 years</SelectItem>
                             <SelectItem value="3-5 years">3-5 years</SelectItem>
                             <SelectItem value="5+ years">5+ years</SelectItem>
@@ -554,9 +497,7 @@ export function SurveyForm() {
                       <FormLabel>Overall Safety Rating *</FormLabel>
                       <FormControl>
                         <Select
-                          onValueChange={(value) =>
-                            field.onChange(parseInt(value))
-                          }
+                          onValueChange={(value) => field.onChange(parseInt(value))}
                           value={field.value?.toString()}
                         >
                           <SelectTrigger>
@@ -581,9 +522,7 @@ export function SurveyForm() {
                   name="timeOfDaySafety"
                   render={({ field }) => (
                     <FormItem className="space-y-3">
-                      <FormLabel>
-                        When do you feel safe in your neighborhood? *
-                      </FormLabel>
+                      <FormLabel>When do you feel safe in your neighborhood? *</FormLabel>
                       <FormControl>
                         <RadioGroup
                           onValueChange={field.onChange}
@@ -592,37 +531,25 @@ export function SurveyForm() {
                         >
                           <div className="flex items-center space-x-2">
                             <RadioGroupItem value="Day only" id="day" />
-                            <Label
-                              htmlFor="day"
-                              className="font-normal cursor-pointer"
-                            >
+                            <Label htmlFor="day" className="font-normal cursor-pointer">
                               Day only
                             </Label>
                           </div>
                           <div className="flex items-center space-x-2">
                             <RadioGroupItem value="Night only" id="night" />
-                            <Label
-                              htmlFor="night"
-                              className="font-normal cursor-pointer"
-                            >
+                            <Label htmlFor="night" className="font-normal cursor-pointer">
                               Night only
                             </Label>
                           </div>
                           <div className="flex items-center space-x-2">
                             <RadioGroupItem value="Both" id="both" />
-                            <Label
-                              htmlFor="both"
-                              className="font-normal cursor-pointer"
-                            >
+                            <Label htmlFor="both" className="font-normal cursor-pointer">
                               Both day and night
                             </Label>
                           </div>
                           <div className="flex items-center space-x-2">
                             <RadioGroupItem value="Neither" id="neither" />
-                            <Label
-                              htmlFor="neither"
-                              className="font-normal cursor-pointer"
-                            >
+                            <Label htmlFor="neither" className="font-normal cursor-pointer">
                               Neither
                             </Label>
                           </div>
@@ -638,31 +565,18 @@ export function SurveyForm() {
                   name="crimeConcernLevel"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>
-                        How concerned are you about crime? *
-                      </FormLabel>
-                      <Select
-                        onValueChange={field.onChange}
-                        value={field.value}
-                      >
+                      <FormLabel>How concerned are you about crime? *</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Select concern level" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="Not concerned">
-                            Not concerned
-                          </SelectItem>
-                          <SelectItem value="Slightly concerned">
-                            Slightly concerned
-                          </SelectItem>
-                          <SelectItem value="Moderately concerned">
-                            Moderately concerned
-                          </SelectItem>
-                          <SelectItem value="Very concerned">
-                            Very concerned
-                          </SelectItem>
+                          <SelectItem value="Not concerned">Not concerned</SelectItem>
+                          <SelectItem value="Slightly concerned">Slightly concerned</SelectItem>
+                          <SelectItem value="Moderately concerned">Moderately concerned</SelectItem>
+                          <SelectItem value="Very concerned">Very concerned</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -678,9 +592,7 @@ export function SurveyForm() {
                       <FormLabel>Police Presence Rating *</FormLabel>
                       <FormControl>
                         <Select
-                          onValueChange={(value) =>
-                            field.onChange(parseInt(value))
-                          }
+                          onValueChange={(value) => field.onChange(parseInt(value))}
                           value={field.value?.toString()}
                         >
                           <SelectTrigger>
@@ -714,8 +626,7 @@ export function SurveyForm() {
                         />
                       </FormControl>
                       <FormDescription>
-                        Your testimonial may be used to help others understand
-                        safety in this area.
+                        Your testimonial may be used to help others understand safety in this area.
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
@@ -727,9 +638,7 @@ export function SurveyForm() {
             {/* Step 3: Cleanliness & Environment */}
             {currentStep === 2 && (
               <div className="space-y-4 animate-in fade-in-50 duration-300">
-                <h3 className="text-lg font-semibold">
-                  Cleanliness & Environment
-                </h3>
+                <h3 className="text-lg font-semibold">Cleanliness & Environment</h3>
 
                 <FormField
                   control={form.control}
@@ -739,9 +648,7 @@ export function SurveyForm() {
                       <FormLabel>Street Cleanliness Rating *</FormLabel>
                       <FormControl>
                         <Select
-                          onValueChange={(value) =>
-                            field.onChange(parseInt(value))
-                          }
+                          onValueChange={(value) => field.onChange(parseInt(value))}
                           value={field.value?.toString()}
                         >
                           <SelectTrigger>
@@ -769,9 +676,7 @@ export function SurveyForm() {
                       <FormLabel>Trash Management Rating *</FormLabel>
                       <FormControl>
                         <Select
-                          onValueChange={(value) =>
-                            field.onChange(parseInt(value))
-                          }
+                          onValueChange={(value) => field.onChange(parseInt(value))}
                           value={field.value?.toString()}
                         >
                           <SelectTrigger>
@@ -799,9 +704,7 @@ export function SurveyForm() {
                       <FormLabel>Parks & Green Spaces Quality *</FormLabel>
                       <FormControl>
                         <Select
-                          onValueChange={(value) =>
-                            field.onChange(parseInt(value))
-                          }
+                          onValueChange={(value) => field.onChange(parseInt(value))}
                           value={field.value?.toString()}
                         >
                           <SelectTrigger>
@@ -835,46 +738,31 @@ export function SurveyForm() {
                         >
                           <div className="flex items-center space-x-2">
                             <RadioGroupItem value="Very quiet" id="vquiet" />
-                            <Label
-                              htmlFor="vquiet"
-                              className="font-normal cursor-pointer"
-                            >
+                            <Label htmlFor="vquiet" className="font-normal cursor-pointer">
                               Very quiet
                             </Label>
                           </div>
                           <div className="flex items-center space-x-2">
                             <RadioGroupItem value="Quiet" id="quiet" />
-                            <Label
-                              htmlFor="quiet"
-                              className="font-normal cursor-pointer"
-                            >
+                            <Label htmlFor="quiet" className="font-normal cursor-pointer">
                               Quiet
                             </Label>
                           </div>
                           <div className="flex items-center space-x-2">
                             <RadioGroupItem value="Moderate" id="moderate" />
-                            <Label
-                              htmlFor="moderate"
-                              className="font-normal cursor-pointer"
-                            >
+                            <Label htmlFor="moderate" className="font-normal cursor-pointer">
                               Moderate
                             </Label>
                           </div>
                           <div className="flex items-center space-x-2">
                             <RadioGroupItem value="Loud" id="loud" />
-                            <Label
-                              htmlFor="loud"
-                              className="font-normal cursor-pointer"
-                            >
+                            <Label htmlFor="loud" className="font-normal cursor-pointer">
                               Loud
                             </Label>
                           </div>
                           <div className="flex items-center space-x-2">
                             <RadioGroupItem value="Very loud" id="vloud" />
-                            <Label
-                              htmlFor="vloud"
-                              className="font-normal cursor-pointer"
-                            >
+                            <Label htmlFor="vloud" className="font-normal cursor-pointer">
                               Very loud
                             </Label>
                           </div>
@@ -890,9 +778,7 @@ export function SurveyForm() {
                   name="environmentalTestimonial"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>
-                        Environmental Testimonial (Optional)
-                      </FormLabel>
+                      <FormLabel>Environmental Testimonial (Optional)</FormLabel>
                       <FormControl>
                         <Textarea
                           placeholder="Share your thoughts about cleanliness and the environment..."
@@ -901,8 +787,7 @@ export function SurveyForm() {
                         />
                       </FormControl>
                       <FormDescription>
-                        Your feedback helps improve neighborhood cleanliness
-                        initiatives.
+                        Your feedback helps improve neighborhood cleanliness initiatives.
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
@@ -930,46 +815,31 @@ export function SurveyForm() {
                         >
                           <div className="flex items-center space-x-2">
                             <RadioGroupItem value="Walk < 5min" id="walk5" />
-                            <Label
-                              htmlFor="walk5"
-                              className="font-normal cursor-pointer"
-                            >
+                            <Label htmlFor="walk5" className="font-normal cursor-pointer">
                               Walk less than 5 minutes
                             </Label>
                           </div>
                           <div className="flex items-center space-x-2">
                             <RadioGroupItem value="Walk 5-15min" id="walk15" />
-                            <Label
-                              htmlFor="walk15"
-                              className="font-normal cursor-pointer"
-                            >
+                            <Label htmlFor="walk15" className="font-normal cursor-pointer">
                               Walk 5-15 minutes
                             </Label>
                           </div>
                           <div className="flex items-center space-x-2">
                             <RadioGroupItem value="Walk 15-30min" id="walk30" />
-                            <Label
-                              htmlFor="walk30"
-                              className="font-normal cursor-pointer"
-                            >
+                            <Label htmlFor="walk30" className="font-normal cursor-pointer">
                               Walk 15-30 minutes
                             </Label>
                           </div>
                           <div className="flex items-center space-x-2">
                             <RadioGroupItem value="Drive required" id="drive" />
-                            <Label
-                              htmlFor="drive"
-                              className="font-normal cursor-pointer"
-                            >
+                            <Label htmlFor="drive" className="font-normal cursor-pointer">
                               Drive required
                             </Label>
                           </div>
                           <div className="flex items-center space-x-2">
                             <RadioGroupItem value="No access" id="noaccess" />
-                            <Label
-                              htmlFor="noaccess"
-                              className="font-normal cursor-pointer"
-                            >
+                            <Label htmlFor="noaccess" className="font-normal cursor-pointer">
                               No easy access
                             </Label>
                           </div>
@@ -988,9 +858,7 @@ export function SurveyForm() {
                       <FormLabel>Restaurant Variety Rating *</FormLabel>
                       <FormControl>
                         <Select
-                          onValueChange={(value) =>
-                            field.onChange(parseInt(value))
-                          }
+                          onValueChange={(value) => field.onChange(parseInt(value))}
                           value={field.value?.toString()}
                         >
                           <SelectTrigger>
@@ -1001,9 +869,7 @@ export function SurveyForm() {
                             <SelectItem value="2">2 - Limited</SelectItem>
                             <SelectItem value="3">3 - Adequate</SelectItem>
                             <SelectItem value="4">4 - Good Variety</SelectItem>
-                            <SelectItem value="5">
-                              5 - Excellent Variety
-                            </SelectItem>
+                            <SelectItem value="5">5 - Excellent Variety</SelectItem>
                           </SelectContent>
                         </Select>
                       </FormControl>
@@ -1020,24 +886,18 @@ export function SurveyForm() {
                       <FormLabel>Food Affordability Rating *</FormLabel>
                       <FormControl>
                         <Select
-                          onValueChange={(value) =>
-                            field.onChange(parseInt(value))
-                          }
+                          onValueChange={(value) => field.onChange(parseInt(value))}
                           value={field.value?.toString()}
                         >
                           <SelectTrigger>
                             <SelectValue placeholder="Select rating" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="1">
-                              1 - Very Expensive
-                            </SelectItem>
+                            <SelectItem value="1">1 - Very Expensive</SelectItem>
                             <SelectItem value="2">2 - Expensive</SelectItem>
                             <SelectItem value="3">3 - Moderate</SelectItem>
                             <SelectItem value="4">4 - Affordable</SelectItem>
-                            <SelectItem value="5">
-                              5 - Very Affordable
-                            </SelectItem>
+                            <SelectItem value="5">5 - Very Affordable</SelectItem>
                           </SelectContent>
                         </Select>
                       </FormControl>
@@ -1052,15 +912,10 @@ export function SurveyForm() {
                   render={({ field }) => (
                     <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
                       <FormControl>
-                        <Checkbox
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                        />
+                        <Checkbox checked={field.value} onCheckedChange={field.onChange} />
                       </FormControl>
                       <div className="space-y-1 leading-none">
-                        <FormLabel>
-                          I have access to a farmers market in my neighborhood
-                        </FormLabel>
+                        <FormLabel>I have access to a farmers market in my neighborhood</FormLabel>
                       </div>
                     </FormItem>
                   )}
@@ -1079,9 +934,7 @@ export function SurveyForm() {
                           {...field}
                         />
                       </FormControl>
-                      <FormDescription>
-                        Help us understand food accessibility in your area.
-                      </FormDescription>
+                      <FormDescription>Help us understand food accessibility in your area.</FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -1092,9 +945,7 @@ export function SurveyForm() {
             {/* Step 5: Financials & Living Costs */}
             {currentStep === 4 && (
               <div className="space-y-4 animate-in fade-in-50 duration-300">
-                <h3 className="text-lg font-semibold">
-                  Financials & Living Costs
-                </h3>
+                <h3 className="text-lg font-semibold">Financials & Living Costs</h3>
 
                 <FormField
                   control={form.control}
@@ -1102,25 +953,18 @@ export function SurveyForm() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Rent/Mortgage Affordability *</FormLabel>
-                      <Select
-                        onValueChange={field.onChange}
-                        value={field.value}
-                      >
+                      <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Select affordability" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="Very affordable">
-                            Very affordable
-                          </SelectItem>
+                          <SelectItem value="Very affordable">Very affordable</SelectItem>
                           <SelectItem value="Affordable">Affordable</SelectItem>
                           <SelectItem value="Fair">Fair</SelectItem>
                           <SelectItem value="Expensive">Expensive</SelectItem>
-                          <SelectItem value="Very expensive">
-                            Very expensive
-                          </SelectItem>
+                          <SelectItem value="Very expensive">Very expensive</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -1134,10 +978,7 @@ export function SurveyForm() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Overall Cost of Living *</FormLabel>
-                      <Select
-                        onValueChange={field.onChange}
-                        value={field.value}
-                      >
+                      <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Select cost level" />
@@ -1164,9 +1005,7 @@ export function SurveyForm() {
                       <FormLabel>Value for Money Rating *</FormLabel>
                       <FormControl>
                         <Select
-                          onValueChange={(value) =>
-                            field.onChange(parseInt(value))
-                          }
+                          onValueChange={(value) => field.onChange(parseInt(value))}
                           value={field.value?.toString()}
                         >
                           <SelectTrigger>
@@ -1177,9 +1016,7 @@ export function SurveyForm() {
                             <SelectItem value="2">2 - Below Average</SelectItem>
                             <SelectItem value="3">3 - Fair Value</SelectItem>
                             <SelectItem value="4">4 - Good Value</SelectItem>
-                            <SelectItem value="5">
-                              5 - Excellent Value
-                            </SelectItem>
+                            <SelectItem value="5">5 - Excellent Value</SelectItem>
                           </SelectContent>
                         </Select>
                       </FormControl>
@@ -1201,10 +1038,7 @@ export function SurveyForm() {
                           {...field}
                         />
                       </FormControl>
-                      <FormDescription>
-                        Your insights help others understand living costs in
-                        this area.
-                      </FormDescription>
+                      <FormDescription>Your insights help others understand living costs in this area.</FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -1225,9 +1059,7 @@ export function SurveyForm() {
                       <FormLabel>Overall Neighborhood Rating *</FormLabel>
                       <FormControl>
                         <Select
-                          onValueChange={(value) =>
-                            field.onChange(parseInt(value))
-                          }
+                          onValueChange={(value) => field.onChange(parseInt(value))}
                           value={field.value?.toString()}
                         >
                           <SelectTrigger>
@@ -1253,15 +1085,10 @@ export function SurveyForm() {
                   render={({ field }) => (
                     <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
                       <FormControl>
-                        <Checkbox
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                        />
+                        <Checkbox checked={field.value} onCheckedChange={field.onChange} />
                       </FormControl>
                       <div className="space-y-1 leading-none">
-                        <FormLabel>
-                          I would recommend this neighborhood to others
-                        </FormLabel>
+                        <FormLabel>I would recommend this neighborhood to others</FormLabel>
                       </div>
                     </FormItem>
                   )}
@@ -1272,9 +1099,7 @@ export function SurveyForm() {
                   name="biggestStrength"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>
-                        What is the biggest strength of your neighborhood? *
-                      </FormLabel>
+                      <FormLabel>What is the biggest strength of your neighborhood? *</FormLabel>
                       <FormControl>
                         <Textarea
                           placeholder="Describe what you love most about your neighborhood..."
@@ -1292,9 +1117,7 @@ export function SurveyForm() {
                   name="areaForImprovement"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>
-                        What area needs the most improvement? *
-                      </FormLabel>
+                      <FormLabel>What area needs the most improvement? *</FormLabel>
                       <FormControl>
                         <Textarea
                           placeholder="Describe what could be better in your neighborhood..."
@@ -1329,12 +1152,7 @@ export function SurveyForm() {
 
             {/* Navigation Buttons */}
             <div className="flex justify-between pt-4 border-t">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={prevStep}
-                disabled={currentStep === 0}
-              >
+              <Button type="button" variant="outline" onClick={prevStep} disabled={currentStep === 0}>
                 <ChevronLeft className="w-4 h-4 mr-2" />
                 Previous
               </Button>
@@ -1359,9 +1177,7 @@ export function SurveyForm() {
             </div>
 
             {/* Auto-save indicator */}
-            <p className="text-xs text-center text-muted-foreground">
-              Your progress is automatically saved
-            </p>
+            <p className="text-xs text-center text-muted-foreground">Your progress is automatically saved</p>
           </form>
         </Form>
       </CardContent>

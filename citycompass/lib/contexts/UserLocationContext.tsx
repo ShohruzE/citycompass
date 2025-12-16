@@ -40,7 +40,7 @@ export function UserLocationProvider({ children }: { children: React.ReactNode }
       setLoading(true);
       setError(null);
 
-      const API_BASE = (process.env.NEXT_PUBLIC_API_BASE as string) || "http://127.0.0.1:8000";
+      const API_BASE = (process.env.API_BASE_URL as string) || "http://127.0.0.1:8000";
       const token = localStorage.getItem("token");
 
       if (!token) {
@@ -140,7 +140,7 @@ export function UserLocationProvider({ children }: { children: React.ReactNode }
         setLoading(true);
         setError(null);
 
-        const API_BASE = (process.env.NEXT_PUBLIC_API_BASE as string) || "http://127.0.0.1:8000";
+        const API_BASE = (process.env.API_BASE_URL as string) || "http://127.0.0.1:8000";
         const token = localStorage.getItem("token");
 
         if (!token) {
