@@ -11,6 +11,7 @@ import { LocationSearchCombobox } from "../components/LocationSearchCombobox";
 import { LocationBadge } from "../components/LocationBadge";
 import { getDisplayNameForZip, type Location } from "@/lib/data/nyc-locations";
 import { inferBoroughFromZip } from "@/lib/actions/location";
+import { useRouter, useSearchParams } from "next/navigation";
 
 export default function DashboardPage() {
   const { zipCode, neighborhood, loading: locationLoading, refreshLocation, updateLocation } = useUserLocation();
@@ -39,6 +40,42 @@ export default function DashboardPage() {
       setAcsZip(viewingZip);
     }
   }, [viewingZip, acsZip, setAcsZip]);
+
+
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    // Check if token is in URL (from OAuth redirect)
+    const tokenFromUrl = searchParams.get("token");
+    
+    if (tokenFromUrl) {
+      // Save token to localStorage
+      localStorage.setItem("token", tokenFromUrl);
+      
+      // Clean up URL by removing token parameter
+      window.history.replaceState({}, '', '/dashboard');
+    }
+    
+    // Check if user is authenticated
+    const token = localStorage.getItem("token");
+    
+    if (!token) {
+      // No token found, redirect to sign in
+      router.push("/sign-in");
+    } else {
+      setIsLoading(false);
+    }
+  }, [searchParams, router]);
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <p>Loading...</p>
+      </div>
+    );
+  }
 
   // Check if user is viewing a different location than their saved one
   const isViewingDifferentLocation = viewingZip !== zipCode;

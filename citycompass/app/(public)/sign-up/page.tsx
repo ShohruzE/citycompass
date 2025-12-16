@@ -7,14 +7,15 @@ import { useState } from "react";
 export default function SignUpPage() {
   const [errorMessage, setErrorMessage] = useState("");
   const [signUpSuccess, setSignUpSuccess] = useState(false);
+  const API_BASE = (process.env.NEXT_PUBLIC_API_BASE as string) || "http://localhost:8000";
 
   const handleGoogleSignUp = () => {
     try {
       setErrorMessage("");
 
       // const backendURL = {process.env.BACKEND_URL};
-      const backendURL = "http://127.0.0.1:8000";
-      window.location.href = `${backendURL}/auth/google-login`;
+      // const backendURL = "http://127.0.0.1:8000";
+      window.location.href = `${API_BASE}/auth/google-login`;
     } catch {
       setErrorMessage("failed to initiate Google Sign in");
     }
@@ -26,8 +27,7 @@ export default function SignUpPage() {
       setErrorMessage("");
 
       // const backendURL = {process.env.BACKEND_URL};
-      const backendURL = "http://localhost:8000";
-      window.location.href = `${backendURL}/auth/ms-login`;
+      window.location.href = `${API_BASE}/auth/ms-login`;
     } catch {
       setErrorMessage("failed to initiate Google Sign in");
     }
@@ -44,9 +44,8 @@ export default function SignUpPage() {
 
       setErrorMessage("");
 
-      const backendURL = "http://127.0.0.1:8000/auth/register";
 
-      const response = await fetch(backendURL, {
+      const response = await fetch(`${API_BASE}/auth/register`, {
         credentials: "include",
         method: "POST",
         headers: {
@@ -66,7 +65,6 @@ export default function SignUpPage() {
 
       const data = await response.json();
       setSignUpSuccess(true);
-      setIsLoading(false);
       // console.log('Login successful:', data);
 
       // Store token if your backend returns one

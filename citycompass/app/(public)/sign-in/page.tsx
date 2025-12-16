@@ -6,7 +6,8 @@ import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 
 async function testing() {
-  const response = await fetch("http://127.0.0.1:8000/auth/test", {
+  const API_BASE = (process.env.NEXT_PUBLIC_API_BASE as string) || "http://localhost:8000";
+  const response = await fetch(`${API_BASE}/auth/test`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     credentials: "include",
@@ -21,15 +22,11 @@ export default function SignInPage() {
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const API_BASE = (process.env.NEXT_PUBLIC_API_BASE as string) || "http://localhost:8000";
 
   testing();
 
-  useEffect(() => {
-    if (error === "auth_failed") {
-      setErrorMessage("Google authentication failed. Please try again.");
-    } else if (error === "server_error") {
-      setErrorMessage("Server error. Please try again later.");
-    } else if (error != null) {
+
   useEffect(() => {
     if (error === "auth_failed") {
       setErrorMessage("Google authentication failed. Please try again.");
@@ -46,8 +43,8 @@ export default function SignInPage() {
       setErrorMessage("");
 
       // const backendURL = {process.env.BACKEND_URL};
-      const backendURL = "http://127.0.0.1:8000";
-      window.location.href = `${backendURL}/auth/google-login`;
+      // const backendURL = "http://127.0.0.1:8000";
+      window.location.href = `${API_BASE}/auth/google-login`;
     } catch (err) {
       setErrorMessage("failed to initiate Google Sign in");
       setIsLoading(false);
@@ -60,8 +57,8 @@ export default function SignInPage() {
       setErrorMessage("");
 
       // const backendURL = {process.env.BACKEND_URL};
-      const backendURL = "http://localhost:8000";
-      window.location.href = `${backendURL}/auth/ms-login`;
+      // const backendURL = "http://localhost:8000";
+      window.location.href = `${API_BASE}/auth/ms-login`;
     } catch (err) {
       setErrorMessage("failed to initiate Google Sign in");
       setIsLoading(false);
@@ -76,9 +73,9 @@ export default function SignInPage() {
       setIsLoading(true);
       setErrorMessage("");
 
-      const backendURL = "http://127.0.0.1:8000/auth/email-auth";
+      // const backendURL = "http://127.0.0.1:8000/auth/email-auth";
 
-      const response = await fetch(backendURL, {
+      const response = await fetch(`${API_BASE}/auth/email-auth`, {
         credentials: "include",
         method: "POST",
         headers: {

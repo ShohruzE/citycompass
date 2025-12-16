@@ -25,7 +25,6 @@ jobs:
       SUMO_LOGIC_URL: ${{ secrets.SUMO_LOGIC_URL }}
       SECRET_KEY: ${{ secrets.SECRET_KEY }}
       ACS_API_KEY: ${{ secrets.ACS_API_KEY }}
-      SUMO_LOGIC_URL: ${{ secrets.SUMO_LOGIC_URL }}
       
     steps:
       - name: Checkout code
