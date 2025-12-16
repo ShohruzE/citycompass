@@ -89,8 +89,6 @@ const SigninContent = () => {
       });
 
       if (!response.ok) {
-        // Handle HTTP errors (4xx, 5xx)
-
         const errorData = await response.json().catch(() => ({}));
         throw new Error(
           errorData.detail || `HTTP error! status: ${response.status}`
@@ -99,13 +97,13 @@ const SigninContent = () => {
 
       const data = await response.json();
       localStorage.setItem("token", data.token);
-      localStorage.setItem("token", data.token);
-      // Wait a moment then redirect
+
+      // Redirect based on whether user has completed a survey
+      const redirectPath = data.has_survey ? "/dashboard" : "/survey";
       setTimeout(() => {
-        window.location.href = "/dashboard";
-        window.location.href = "/dashboard";
+        window.location.href = redirectPath;
       }, 1000);
-      // console.log('cookie', data);
+
       console.log("All cookies:", document.cookie);
       setIsLoading(false);
     } catch (err: any) {
