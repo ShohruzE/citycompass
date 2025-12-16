@@ -33,7 +33,8 @@ from dotenv import load_dotenv
 import os 
 
 # from app.logger import log_to_sumo
-import resend 
+# import resend 
+
 from sqlalchemy.orm import Session
 
 # Logs information so developers can see what is happening under the hood
@@ -729,7 +730,7 @@ def send_reset_email(email: str, token: str):
             """
         }
         
-        resend.Emails.send(params)
+        # resend.Emails.send(params)
         
     except Exception as e:
         print(f"Error sending email: {e}")
