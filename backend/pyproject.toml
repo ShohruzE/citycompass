@@ -32,4 +32,31 @@ dependencies = [
     "typing-inspection==0.4.1",
     "typing_extensions==4.15.0",
     "uvicorn==0.35.0",
+    # --- Auth & Security ---
+    "bcrypt==4.3.0",
+    "passlib==1.7.4",
+    "python-jose==3.5.0",
+    "python-multipart==0.0.20",
+    "ecdsa==0.19.1",
+    "pyasn1==0.6.1",
+    "rsa==4.9.1",
+    "six==1.17.0",
+    # --- Testing ---
+    "pytest==8.4.2",
+    "iniconfig==2.3.0",
+    "pluggy==1.6.0",
+    "Pygments==2.19.2",
+    "packaging==25.0",
+    # --- ML + Data Science ---
+    "pandas==2.3.3",
+    "numpy==2.3.4",
+    "scikit-learn==1.7.2",
+    "xgboost==3.1.1",
+    "seaborn==0.13.2",
+    "matplotlib==3.10.7",
+    "joblib==1.5.2",
+    "openpyxl==3.1.5",
+    "et-xmlfile==2.0.0",
+    # --- HTTP Client ---
+    "requests>=2.31.0"
 ]

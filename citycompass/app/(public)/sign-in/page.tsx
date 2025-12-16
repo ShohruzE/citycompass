@@ -30,6 +30,12 @@ export default function SignInPage() {
     } else if (error === "server_error") {
       setErrorMessage("Server error. Please try again later.");
     } else if (error != null) {
+  useEffect(() => {
+    if (error === "auth_failed") {
+      setErrorMessage("Google authentication failed. Please try again.");
+    } else if (error === "server_error") {
+      setErrorMessage("Server error. Please try again later.");
+    } else if (error != null) {
       setErrorMessage(error);
     }
   }, [error]);
@@ -95,8 +101,10 @@ export default function SignInPage() {
 
       const data = await response.json();
       localStorage.setItem("token", data.token);
+      localStorage.setItem("token", data.token);
       // Wait a moment then redirect
       setTimeout(() => {
+        window.location.href = "/dashboard";
         window.location.href = "/dashboard";
       }, 1000);
       // console.log('cookie', data);
@@ -112,9 +120,7 @@ export default function SignInPage() {
   return (
     <div className="flex flex-col justify-center items-center min-h-[calc(100vh-64px)] text-center px-6 pt-8 pb-8 bg-background text-foreground">
       <h2 className="text-3xl font-bold mb-4">Welcome back</h2>
-      <p className="text-muted-foreground mb-6">
-        Sign in to continue exploring NYC insights
-      </p>
+      <p className="text-muted-foreground mb-6">Sign in to continue exploring NYC insights</p>
 
       <div className="flex flex-col gap-3 w-full max-w-sm">
         <form

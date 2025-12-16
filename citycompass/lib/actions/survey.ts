@@ -1,6 +1,5 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
 import { surveyFormSchema, type SurveyFormData } from "../schemas/survey";
 
 export async function submitSurvey(formData: SurveyFormData) {
@@ -28,7 +27,7 @@ export async function submitSurvey(formData: SurveyFormData) {
     if (!response.ok) {
       throw new Error("Failed to submit survey");
     }
-    revalidatePath("/survey");
+    // revalidatePath("/survey");
   } catch (error) {
     console.error("Error submitting survey:", error);
     return {

@@ -3,60 +3,212 @@
 import InsightCard from "../components/InsightCard";
 import StaticNYCMap from "../components/StaticNYCMap";
 import { ScoreCard } from "../components/ScoreCard";
-import { Leaf, ShieldCheck, Database } from "lucide-react";
-
-const mockScores = [
-  { title: "Overall Score", score: 78, delta: 2.3, timeframe: "+6mo" },
-  { title: "Safety", score: 82, delta: 1.8, timeframe: "+6mo" },
-  { title: "Cleanliness", score: 74, delta: -0.2, timeframe: "+6mo" },
-  { title: "Food Access", score: 65, delta: -0.5, timeframe: "+6mo" },
-  { title: "Financials", score: 71, delta: 1.2, timeframe: "+6mo" },
-  { title: "Crime", score: 79, delta: 0.8, timeframe: "+6mo" },
-];
+import { Leaf, ShieldCheck, Database, MapPin, Users, DollarSign, Calendar, AlertCircle } from "lucide-react";
+import useNeighborhoodACS from "../hooks/useNeighborhoodACS";
+import { useState, useEffect } from "react";
+import { useUserLocation } from "@/lib/contexts/UserLocationContext";
+import { LocationSearchCombobox } from "../components/LocationSearchCombobox";
+import { LocationBadge } from "../components/LocationBadge";
+import { getDisplayNameForZip, type Location } from "@/lib/data/nyc-locations";
+import { inferBoroughFromZip } from "@/lib/actions/location";
 
 export default function DashboardPage() {
+  const { zipCode, neighborhood, loading: locationLoading, refreshLocation, updateLocation } = useUserLocation();
+
+  // Use user's zip code or fallback to default
+  const defaultZip = zipCode || "10001";
+
+  // State for viewing location (can be different from saved location)
+  const [viewingZip, setViewingZip] = useState<string>(defaultZip);
+  const [viewingLocation, setViewingLocation] = useState<Location | null>(null);
+  const [isUpdatingLocation, setIsUpdatingLocation] = useState(false);
+
+  // Update viewing zip when user's saved location changes
+  useEffect(() => {
+    if (zipCode && zipCode !== viewingZip) {
+      setViewingZip(zipCode);
+      setViewingLocation(null);
+    }
+  }, [zipCode, viewingZip]);
+
+  const { data: acsData, loading: acsLoading, zip: acsZip, setZip: setAcsZip } = useNeighborhoodACS(viewingZip);
+
+  // Update ACS zip when viewing location changes
+  useEffect(() => {
+    if (viewingZip && viewingZip !== acsZip) {
+      setAcsZip(viewingZip);
+    }
+  }, [viewingZip, acsZip, setAcsZip]);
+
+  // Check if user is viewing a different location than their saved one
+  const isViewingDifferentLocation = viewingZip !== zipCode;
+
+  // format values for the small ScoreCards
+  const population = acsData?.total_population != null ? acsData.total_population.toLocaleString() : "—";
+  const medianIncome =
+    acsData?.median_household_income != null ? `$${Number(acsData.median_household_income).toLocaleString()}` : "—";
+  const medianAge = acsData?.median_age != null ? acsData.median_age.toFixed(1) : "—";
+  const povertyRate = acsData?.poverty_rate != null ? `${(acsData.poverty_rate * 100).toFixed(1)}%` : "—";
+
+  // Helper functions for dynamic insights
+  const getIncomeInsight = (income: number | null | undefined): string => {
+    if (income == null) return "—";
+    if (income >= 100000) return "High Income Area";
+    if (income >= 70000) return "Above Average Income";
+    if (income >= 50000) return "Average Income Area";
+    return "Lower Income Area";
+  };
+
+  const getAgeInsight = (age: number | null | undefined): string => {
+    if (age == null) return "—";
+    if (age < 30) return "Young Demographic";
+    if (age < 40) return "Young Professionals";
+    if (age <= 50) return "Family-Oriented";
+    return "Mature Community";
+  };
+
+  const getPopInsight = (pop: number | null | undefined): string => {
+    if (!pop) return "—";
+    return pop > 30000 ? "High Population Density" : "Moderate Density";
+  };
+
+  const getPovertyInsight = (rate: number | null | undefined): string => {
+    if (rate == null) return "—";
+    return rate < 0.15 ? "Low Poverty Rate" : "Moderate Poverty Rate";
+  };
+
+  const incomeInsight = getIncomeInsight(acsData?.median_household_income);
+  const ageInsight = getAgeInsight(acsData?.median_age);
+  const popInsight = getPopInsight(acsData?.total_population);
+  const povertyInsight = getPovertyInsight(acsData?.poverty_rate);
+
+  // Handle location search selection
+  const handleLocationChange = (newZipCode: string, location: Location | null) => {
+    setViewingZip(newZipCode);
+    setViewingLocation(location);
+  };
+
+  // Handle setting the viewing location as the user's saved location
+  const handleSetAsMyLocation = async () => {
+    if (!viewingZip) return;
+
+    setIsUpdatingLocation(true);
+    try {
+      const locationBorough = viewingLocation?.borough || inferBoroughFromZip(viewingZip);
+      const locationName = viewingLocation?.label || getDisplayNameForZip(viewingZip);
+
+      await updateLocation(viewingZip, locationBorough ?? undefined, locationName ?? undefined);
+      // Success - the context will update automatically
+    } catch (error) {
+      console.error("Failed to update location:", error);
+      alert("Failed to set location. Please try again.");
+    } finally {
+      setIsUpdatingLocation(false);
+    }
+  };
+
+  // Get display name for current viewing location
+  const viewingLocationName = viewingLocation?.label || getDisplayNameForZip(viewingZip);
+
   return (
     <div className="space-y-6">
       {/* Header */}
-      <header className="flex items-center justify-between">
+      <header className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold text-foreground">
-            Neighborhood Dashboard
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            Discover insights for New York City neighborhoods
-          </p>
+          <h1 className="text-2xl sm:text-3xl font-semibold text-foreground">Neighborhood Dashboard</h1>
+          <p className="text-sm text-muted-foreground mt-1">Discover insights for New York City neighborhoods</p>
         </div>
 
-        <button className="text-sm px-4 py-2 rounded-md bg-primary/10 hover:bg-primary/20 text-primary font-medium transition-colors">
-          My Location
-        </button>
+        <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+          {zipCode && (
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-muted/50 border border-border transition-all duration-200 hover:bg-muted">
+              <MapPin className="w-3.5 h-3.5 text-muted-foreground" />
+              <div className="text-xs">
+                <span className="text-muted-foreground">Saved: </span>
+                <span className="font-medium text-foreground">{zipCode}</span>
+              </div>
+            </div>
+          )}
+          <button
+            onClick={refreshLocation}
+            disabled={locationLoading}
+            aria-label="Refresh your saved location"
+            className="text-xs px-3 py-1.5 rounded-md bg-muted hover:bg-muted/80 text-foreground font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed focus:ring-2 focus:ring-primary focus:ring-offset-2"
+          >
+            {locationLoading ? "Loading..." : "Refresh"}
+          </button>
+        </div>
       </header>
 
-      {/* Search Bar */}
-      <div className="flex gap-3 items-center">
-        <input
-          type="text"
-          placeholder="Search neighborhood, ZIP, or representative..."
-          className="flex-1 px-4 py-2 border border-input rounded-lg text-sm bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-        />
-        <div className="flex gap-2">
-          {["Manhattan", "Safety", "Food Access"].map((tag) => (
-            <span
-              key={tag}
-              className="px-3 py-1 bg-muted text-muted-foreground rounded-full text-xs font-medium"
+      {/* Location Badge and Search */}
+      <div className="space-y-3">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <LocationBadge
+            zipCode={viewingZip}
+            locationName={viewingLocationName}
+            isUserLocation={!isViewingDifferentLocation}
+            className="w-full sm:w-auto"
+          />
+
+          {isViewingDifferentLocation && (
+            <button
+              onClick={handleSetAsMyLocation}
+              disabled={isUpdatingLocation}
+              aria-label="Set current viewing location as your saved location"
+              className="w-full sm:w-auto px-5 py-2.5 rounded-lg bg-primary text-primary-foreground font-medium text-sm hover:bg-primary/90 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow-md focus:ring-2 focus:ring-primary focus:ring-offset-2 whitespace-nowrap"
             >
-              {tag}
-            </span>
-          ))}
+              {isUpdatingLocation ? (
+                <span className="flex items-center justify-center gap-2">
+                  <span className="animate-spin">⏳</span>
+                  Saving...
+                </span>
+              ) : (
+                "Set as My Location"
+              )}
+            </button>
+          )}
+        </div>
+
+        {/* Search Bar */}
+        <div className="w-full">
+          <LocationSearchCombobox value={viewingZip} onChange={handleLocationChange} disabled={locationLoading} />
         </div>
       </div>
 
-      {/* Score Cards */}
-      <div className="flex flex-wrap gap-4">
-        {mockScores.map((s) => (
-          <ScoreCard key={s.title} {...s} />
-        ))}
+      {/* Score Cards*/}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <ScoreCard
+          title="Population"
+          value={acsLoading ? "—" : population}
+          subtitle={acsLoading ? "Loading…" : `ZIP: ${acsZip}`}
+          icon={<Users className="w-4 h-4" />}
+          color="blue"
+          insight={acsLoading ? "—" : popInsight}
+        />
+        <ScoreCard
+          title="Median income"
+          value={acsLoading ? "—" : medianIncome}
+          subtitle={acsLoading ? "Loading…" : `ZIP: ${acsZip}`}
+          icon={<DollarSign className="w-4 h-4" />}
+          color="green"
+          insight={acsLoading ? "—" : incomeInsight}
+        />
+        <ScoreCard
+          title="Median age"
+          value={acsLoading ? "—" : medianAge}
+          subtitle={acsLoading ? "Loading…" : `ZIP: ${acsZip}`}
+          icon={<Calendar className="w-4 h-4" />}
+          color="purple"
+          insight={acsLoading ? "—" : ageInsight}
+        />
+        <ScoreCard
+          title="Poverty rate"
+          value={acsLoading ? "—" : povertyRate}
+          subtitle={acsLoading ? "Loading…" : `ZIP: ${acsZip}`}
+          icon={<AlertCircle className="w-4 h-4" />}
+          color="amber"
+          insight={acsLoading ? "—" : povertyInsight}
+        />
       </div>
 
       <div className="grid grid-cols-3 gap-6">
@@ -64,12 +216,10 @@ export default function DashboardPage() {
         <div className="col-span-2 bg-card rounded-2xl shadow-sm border border-border p-4">
           <div className="flex items-center justify-between mb-3">
             <h2 className="font-medium text-foreground">Neighborhood Overview</h2>
-            <button className="text-sm text-primary hover:underline">
-              Full Map
-            </button>
+            <button className="text-sm text-primary hover:underline">Full Map</button>
           </div>
           <div className="w-full">
-            <StaticNYCMap />
+            <StaticNYCMap currentZipCode={viewingZip || undefined} />
           </div>
         </div>
 

@@ -3,14 +3,14 @@
 # ============================================================================
 
 # initial libraries to create basic API routes and errors
-from fastapi import APIRouter, Depends, Request, Response 
+from fastapi import APIRouter, Depends, Request, Response, HTTPException
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 from typing import Annotated
 import re
 
 # connect to Postgres Database and read JSON from responses
-from app.schemas.db import get_db
+from app.core.db import get_db
 from pydantic import BaseModel
 from starlette.config import Config
 from authlib.integrations.starlette_client import OAuth, OAuthError
@@ -20,17 +20,14 @@ from app.models import models
 
 # All libraries used to support JWT & auth routes
 from datetime import timedelta, datetime
-# from typing import Annotated
-from fastapi import APIRouter, Depends, HTTPException
-# from pydantic import BaseModel
-# from sqlalchemy.orm import Session
 from starlette import status
-from app.schemas.db import SessionLocal
 from app.models.models import Users
 from passlib.context import CryptContext
+
 # document_further
 from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
 from jose import jwt, JWTError
+
 # Config file reads environment file
 from dotenv import load_dotenv
 import os 
@@ -58,7 +55,7 @@ load_dotenv()
 # ============================================================================
 
 # retrieve the secret key from env file records
-SECRET_KEY = os.getenv('SECRET_KEY') 
+SECRET_KEY = os.getenv("SECRET_KEY")
 # assert SECRET_KEY, "SECRET_KEY not set"
 ALGORITHM = 'HS256'
 RESET_TOKEN_EXPIRE_MINUTES = 15  # Token expires in 15 minutes
@@ -92,9 +89,11 @@ class CreateUserRequest(BaseModel):
     username: str
     password: str
 
+
 class UserLoginRequest(BaseModel):
     username: str
     password: str
+
 
 class Token(BaseModel):
     access_token: str
@@ -329,7 +328,7 @@ async def ms_auth(request: Request, db: db_dependency):
 
     try:
         db_user = authenticate_sso_user(user["email"], db)
-        print("db_user: ",db_user)
+        print("db_user: ", db_user)
         if db_user == False:
             logging.info(user.email + " not found in db, gmail user is being added to database")
             create_microsoft_user(user["email"],db)
@@ -374,9 +373,9 @@ async def logout(request: Request, response: Response):
     response.delete_cookie(
         key="access_token",  # Your session cookie name
         path="/",
-        domain="localhost"  # Match your cookie domain
+        domain="localhost",  # Match your cookie domain
     )
-    
+
     return {"message": "Logged out successfully"}
     # return RedirectResponse(url="http://localhost:3000")
 
@@ -469,16 +468,20 @@ def create_jwt_token(username, id):
 async def test():
     return {"message": "CORS works!"}
 
+
 @router.post("/email-auth")
-async def email_login(db:db_dependency, user_login_request: UserLoginRequest):
-    
+async def email_login(db: db_dependency, user_login_request: UserLoginRequest):
     try:
-        # db_user = (user.email, db) 
-        db_user = authenticate_user(user_login_request.username, user_login_request.password, db)
-        print("db_user: ",db_user)
-        if db_user==False:
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
-                                detail='Could not validate user.')
+        # db_user = (user.email, db)
+        db_user = authenticate_user(
+            user_login_request.username, user_login_request.password, db
+        )
+        print("db_user: ", db_user)
+        if not db_user:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Could not validate user.",
+            )
         else:
             print(db_user.id)
     except Exception as error:
@@ -486,24 +489,30 @@ async def email_login(db:db_dependency, user_login_request: UserLoginRequest):
         print(error)
 
     token = create_access_token(db_user.username, db_user.id, timedelta(minutes=30))
-    response = JSONResponse(content={
-        "message": "Login successful",
-        "user": user_login_request.username,
-        "token":token
-        # Include any other user data you need
-    })
-    
+    response = JSONResponse(
+        content={
+            "message": "Login successful",
+            "user": user_login_request.username,
+            "token": token,
+            # Include any other user data you need
+        }
+    )
+
     return response
 
+
 @router.post("/token", response_model=Token)
-async def login_for_access_token(form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
-        db:db_dependency):
-        user = authenticate_user(form_data.username, form_data.password, db)
-        if not user:
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
-                                detail='Could not validate user.')
-        token = create_access_token(user.username, user.id, timedelta(minutes=30))
-        return {'access_token':token, 'token_type':'bearer'}
+async def login_for_access_token(
+    form_data: Annotated[OAuth2PasswordRequestForm, Depends()], db: db_dependency
+):
+    user = authenticate_user(form_data.username, form_data.password, db)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Could not validate user."
+        )
+    token = create_access_token(user.username, user.id, timedelta(minutes=30))
+    return {"access_token": token, "token_type": "bearer"}
+
 
 # @router.post("/login", response_model=Token)
 # async def login_for_access_token(form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
@@ -515,29 +524,33 @@ async def login_for_access_token(form_data: Annotated[OAuth2PasswordRequestForm,
 #         token = create_access_token(user.username, user.id, timedelta(minutes=30))
 #         return {'access_token':token, 'token_type':'bearer'}
 
+
 @router.post("/verify-token", response_model=Token)
-async def verify_token(request: Request,
-        db:db_dependency):
-        token = request.cookies.get('access_token')
-        if not token:
-            raise HTTPException(status_code = status.HTTP_401_UNAUTHORIZED, detail='Not authenticated')
-        
-        try:
-            payload = jwt.decode(token, SECRET_KEY , algorithms=[ALGORITHM])
-            username: str = payload.get('sub')
-            user_id: int = payload.get('id')
-            if username is None or user_id is None:
-                raise HTTPException(status_code =status.HTTP_401_UNAUTHORIZED,
-                                    detail='Could not validate user.')
-            user = db.query(Users).filter(Users.id == user_id).first()
-            return user
-        except JWTError:
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
-                detail='Could not validate user.')
+async def verify_token(request: Request, db: db_dependency):
+    token = request.cookies.get("access_token")
+    if not token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated"
+        )
+
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        username: str = payload.get("sub")
+        user_id: int = payload.get("id")
+        if username is None or user_id is None:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Could not validate user.",
+            )
+        user = db.query(Users).filter(Users.id == user_id).first()
+        return user
+    except JWTError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Could not validate user."
+        )
 
 
-
-def authenticate_user(username:str, password:str, db):
+def authenticate_user(username: str, password: str, db):
     user = db.query(Users).filter(Users.username == username).first()
     print(username)
     # print ("found user?:" ,user)
@@ -547,10 +560,12 @@ def authenticate_user(username:str, password:str, db):
         return False
     return user
 
+
 def decrypt_user_password(user_password: str, test_password: str):
     return bcrypt_context.verify(test_password, user_password)
 
-def authenticate_sso_user(username:str, db):
+
+def authenticate_sso_user(username: str, db):
     # Query for user by username
     user = db.query(Users).filter(Users.username == username).first()
 
@@ -566,51 +581,59 @@ def authenticate_sso_user(username:str, db):
         return False
 
     if user.signin_method not in ["Google", "Microsoft"]:
-        print(f"❌ Authentication failed: Invalid sign-in method '{user.signin_method}'. Expected 'Google' or 'Microsoft'")
+        print(
+            f"❌ Authentication failed: Invalid sign-in method '{user.signin_method}'. Expected 'Google' or 'Microsoft'"
+        )
         return False
 
     print("✅ User authenticated successfully")
     return user
 
-def create_access_token(username:str, user_id:int, expires_delta:timedelta):
-    encode = {'sub':username, 'id':user_id}
-    expires = datetime.utcnow() +expires_delta
-    encode.update({'exp':expires})
+
+def create_access_token(username: str, user_id: int, expires_delta: timedelta):
+    encode = {"sub": username, "id": user_id}
+    expires = datetime.utcnow() + expires_delta
+    encode.update({"exp": expires})
     return jwt.encode(encode, SECRET_KEY, algorithm=ALGORITHM)
 
+
 def retrieve_payload(token: Annotated[str, Depends(oauth2_bearer)]):
-    payload = jwt.decode(token, SECRET_KEY , algorithms=[ALGORITHM])
+    payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
     return payload
+
 
 async def get_current_user(token: Annotated[str, Depends(oauth2_bearer)]):
     print(f"Received token: {token[:20]}...")  # Print first 20 chars
     print(f"SECRET_KEY: {SECRET_KEY[:10]}...")  # Print first 10 chars
     print(f"ALGORITHM: {ALGORITHM}")
     try:
-        print("23")
-        payload = jwt.decode(token, SECRET_KEY , algorithms=[ALGORITHM])
-        print("23")
-        username: str = payload.get('sub')
-        user_id: int = payload.get('id')
-        print("print Username: ",username)
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        username: str = payload.get("sub")
+        user_id: int = payload.get("id")
         if username is None or user_id is None:
-            raise HTTPException(status_code =status.HTTP_401_UNAUTHORIZED,
-                                detail='Could not validate user.')
-        return {'username': username , 'id': user_id}
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Could not validate user.",
+            )
+        return {"username": username, "id": user_id}
     except JWTError:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
-            detail='Could not validate user.')
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Could not validate user."
+        )
+
 
 # new function
 async def authenticate_token(token: Annotated[str, Depends(oauth2_bearer)]):
     try:
-        payload = jwt.decode(token, SECRET_KEY , algorithms=[ALGORITHM])
-        username: str = payload.get('sub')
-        user_id: int = payload.get('id')
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        username: str = payload.get("sub")
+        user_id: int = payload.get("id")
         if username is None or user_id is None:
-            raise HTTPException(status_code =status.HTTP_401_UNAUTHORIZED,
-                                detail='Could not validate user.')
-        return {'username': username , 'id': user_id}
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Could not validate user.",
+            )
+        return {"username": username, "id": user_id}
     except JWTError:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
             detail='Could not validate user.')

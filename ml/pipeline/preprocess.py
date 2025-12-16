@@ -232,6 +232,22 @@ def build_furman_dataset(folder: Path = DEFAULT_DATA_FOLDER) -> pd.DataFrame:
     )
     furman_monthly = furman_monthly.drop(columns=["year_tmp"])
 
+    # -----------------------------------------
+    # SANITIZE COLUMN NAMES TO MATCH TRAINING
+    # -----------------------------------------
+    import re
+    
+    def sanitize(name: str) -> str:
+        s = str(name)
+        s = s.replace("%", "pct").replace("$", "usd")
+        s = re.sub(r"[^\w]+", "_", s)
+        s = re.sub(r"_+", "_", s).strip("_")
+        s = s.lower()
+        return s[:120]
+    
+    renamed = {c: sanitize(c) for c in furman_monthly.columns}
+    furman_monthly.rename(columns=renamed, inplace=True)
+    
     return furman_monthly
 
 

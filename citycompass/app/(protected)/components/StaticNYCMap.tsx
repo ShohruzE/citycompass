@@ -6,6 +6,10 @@ const StaticNYCMapClient = dynamic(() => import("./StaticNYCMap.client"), {
   ssr: false,
 });
 
-export default function StaticNYCMap() {
-  return <StaticNYCMapClient />;
+interface StaticNYCMapProps {
+  currentZipCode?: string;
+}
+
+export default function StaticNYCMap({ currentZipCode }: StaticNYCMapProps) {
+  return <StaticNYCMapClient currentZipCode={currentZipCode} />;
 }

@@ -3,16 +3,7 @@
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import {
-  surveyFormSchema,
-  personalInfoSchema,
-  safetySecuritySchema,
-  cleanlinessEnvironmentSchema,
-  foodAmenitiesSchema,
-  financialsSchema,
-  overallFeedbackSchema,
-  type SurveyFormData,
-} from "@/lib/schemas/survey";
+import { surveyFormSchema, type SurveyFormData } from "@/lib/schemas/survey";
 import { submitSurvey } from "@/lib/actions/survey";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -26,6 +17,7 @@ import { Progress } from "@/components/ui/progress";
 import { useLocalStorage } from "@/lib/hooks/useLocalStorage";
 import { ChevronLeft, ChevronRight, Check } from "lucide-react";
 import { Label } from "@/components/ui/label";
+import { useUserLocation } from "@/lib/contexts/UserLocationContext";
 
 const STORAGE_KEY = "citycompass-survey-draft";
 
@@ -43,6 +35,7 @@ export function SurveyForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
   const [savedData, setSavedData, clearSavedData] = useLocalStorage<Partial<SurveyFormData>>(STORAGE_KEY, {});
+  const { refreshLocation } = useUserLocation();
 
   const form = useForm<SurveyFormData>({
     resolver: zodResolver(surveyFormSchema),
@@ -85,10 +78,10 @@ export function SurveyForm() {
   useEffect(() => {
     if (Object.keys(savedData).length > 0) {
       Object.entries(savedData).forEach(([key, value]) => {
-        form.setValue(key as keyof SurveyFormData, value as any);
+        form.setValue(key as keyof SurveyFormData, value as SurveyFormData[keyof SurveyFormData]);
       });
     }
-  }, []);
+  }, [savedData, form]);
 
   // Save form data to localStorage on any change
   useEffect(() => {
@@ -96,7 +89,7 @@ export function SurveyForm() {
       setSavedData(value as Partial<SurveyFormData>);
     });
     return () => subscription.unsubscribe();
-  }, [form.watch]);
+  }, [form, setSavedData]);
 
   const validateStep = async () => {
     let isValid = false;
@@ -196,10 +189,16 @@ export function SurveyForm() {
       } else if (result?.message) {
         setServerError(result.message);
       } else {
-        // Success - clear saved data
+        // Success - clear saved data and refresh location
         clearSavedData();
+        try {
+          await refreshLocation();
+        } catch (locationError) {
+          console.error("Failed to refresh location after survey submission:", locationError);
+          // Don't fail the submission if location refresh fails
+        }
       }
-    } catch (error) {
+    } catch {
       setServerError("An unexpected error occurred. Please try again.");
     } finally {
       setIsSubmitting(false);
