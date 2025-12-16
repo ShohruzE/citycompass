@@ -20,7 +20,6 @@ class SurveyRequest(BaseModel):
     
     # Step 1: Personal Information
     name: str = Field(..., min_length=2, description="Full name of the respondent")
-    email: EmailStr = Field(..., description="Email address")
     age: int = Field(..., ge=18, le=100, description="Age must be between 18 and 100")
     borough: BoroughType = Field(..., description="NYC Borough")
     neighborhood: str = Field(..., min_length=2, description="Neighborhood name")
@@ -73,7 +72,6 @@ class SurveyRequest(BaseModel):
         "json_schema_extra": {
             "example": {
                 "name": "John Doe",
-                "email": "john@example.com",
                 "age": 30,
                 "borough": "Brooklyn",
                 "neighborhood": "Williamsburg",
@@ -111,9 +109,36 @@ class SurveyRequest(BaseModel):
 class SurveyResponse(BaseModel):
     """Survey response schema"""
     id: int
-    user_email: str
+    name: str
+    age: int
     borough: str
     neighborhood: str
+    zip_code: str
+    residency_duration: str
+    safety_rating: int
+    time_of_day_safety: str
+    crime_concern_level: str
+    police_presence_rating: int
+    safety_testimonial: str
+    street_cleanliness_rating: int
+    trash_management_rating: int
+    parks_quality_rating: int
+    noise_level: str
+    environmental_testimonial: str
+    grocery_store_access: str
+    restaurant_variety_rating: int
+    food_affordability_rating: int
+    farmers_market_access: bool
+    food_access_testimonial: str
+    rent_affordability: str
+    cost_of_living: str
+    value_for_money_rating: int
+    financial_testimonial: str
+    overall_rating: int
+    would_recommend: bool
+    biggest_strength: str
+    area_for_improvement: str
+    additional_comments: str
     created_at: datetime
     message: str = "Survey submitted successfully"
     

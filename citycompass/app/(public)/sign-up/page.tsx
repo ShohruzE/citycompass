@@ -7,7 +7,8 @@ import { useState } from "react";
 export default function SignUpPage() {
   const [errorMessage, setErrorMessage] = useState("");
   const [signUpSuccess, setSignUpSuccess] = useState(false);
-  const API_BASE = (process.env.NEXT_PUBLIC_API_BASE as string) || "http://localhost:8000";
+  const API_BASE =
+    (process.env.NEXT_PUBLIC_API_BASE as string) || "http://localhost:8000";
 
   const handleGoogleSignUp = () => {
     try {
@@ -19,7 +20,6 @@ export default function SignUpPage() {
     } catch {
       setErrorMessage("failed to initiate Google Sign in");
     }
-
   };
 
   const handleMicrosoftSignUp = () => {
@@ -32,9 +32,9 @@ export default function SignUpPage() {
       setErrorMessage("failed to initiate Google Sign in");
     }
     setTimeout(() => {
-        window.location.href = "/dashboard";
-      }, 1000);
-      // console.log('cookie', data);
+      window.location.href = "/survey";
+    }, 1000);
+    // console.log('cookie', data);
   };
 
   const handleEmailSignup = async (formData: FormData) => {
@@ -43,7 +43,6 @@ export default function SignUpPage() {
       const password = formData.get("password");
 
       setErrorMessage("");
-
 
       const response = await fetch(`${API_BASE}/auth/register`, {
         credentials: "include",
@@ -60,29 +59,40 @@ export default function SignUpPage() {
       if (!response.ok) {
         // Handle HTTP errors (4xx, 5xx)
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
+        throw new Error(
+          errorData.detail || `HTTP error! status: ${response.status}`
+        );
       }
 
-      const data = await response.json();
       setSignUpSuccess(true);
-      // console.log('Login successful:', data);
 
-      // Store token if your backend returns one
+      // Automatically log in the user after successful signup
+      const loginResponse = await fetch(`${API_BASE}/auth/email-auth`, {
+        credentials: "include",
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          username: email,
+          password: password,
+        }),
+      });
 
-      // localStorage.setItem('token', data.cookie);
+      if (loginResponse.ok) {
+        const loginData = await loginResponse.json();
+        localStorage.setItem("token", loginData.token);
 
-      // Redirect or update UI on success
-      console.log("Cookies after login:", document.cookie);
-
-      // Wait a moment then redirect
-      // setTimeout(() => {
-      //   window.location.href = "/dashboard";
-      // }, 1000);
-      // console.log('cookie', data);
-      console.log("All cookies:", document.cookie);
+        // New users always go to survey (has_survey will be false)
+        setTimeout(() => {
+          window.location.href = "/survey";
+        }, 1500);
+      }
     } catch (err) {
       console.error("Login error:", err);
-      setErrorMessage(err instanceof Error ? err.message : "Failed to sign in with email");
+      setErrorMessage(
+        err instanceof Error ? err.message : "Failed to sign in with email"
+      );
     }
   };
 
@@ -90,11 +100,15 @@ export default function SignUpPage() {
     <div className="flex flex-col justify-center items-center min-h-[calc(100vh-64px)] text-center px-6 pt-8 pb-8 bg-background text-foreground">
       <h2 className="text-3xl font-bold mb-4">Create an Account</h2>
       <p className="text-muted-foreground mb-6">
-        Join CityCompass to explore data-driven insights about NYC neighborhoods.
+        Join CityCompass to explore data-driven insights about NYC
+        neighborhoods.
       </p>
 
       <div className="flex flex-col gap-3 w-full max-w-sm">
-        <form className="flex flex-col gap-3 w-full max-w-sm" action={handleEmailSignup}>
+        <form
+          className="flex flex-col gap-3 w-full max-w-sm"
+          action={handleEmailSignup}
+        >
           <input
             type="email"
             name="email"
@@ -107,14 +121,19 @@ export default function SignUpPage() {
             placeholder="Password"
             className="border border-input bg-background rounded-md px-4 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
           />
-          <Button type="submit" className="bg-primary text-primary-foreground hover:bg-primary/80">
+          <Button
+            type="submit"
+            className="bg-primary text-primary-foreground hover:bg-primary/80"
+          >
             Create Account
           </Button>
         </form>
 
         {signUpSuccess && (
           <div className="w-full max-w-sm p-6 bg-green-50 border border-green-200 rounded-md">
-            <p className="text-green-700 font-semibold mb-4">Sign up successful!</p>
+            <p className="text-green-700 font-semibold mb-4">
+              Sign up successful!
+            </p>
             <Link href="/sign-in">
               <Button className="w-full bg-primary text-primary-foreground hover:bg-primary/80">
                 Go to Sign In
@@ -133,7 +152,13 @@ export default function SignUpPage() {
           onClick={handleGoogleSignUp}
           className="flex items-center justify-center gap-3 w-full px-4 py-3 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors shadow-sm"
         >
-          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 20 20"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
             <path
               d="M19.6 10.227c0-.709-.064-1.39-.182-2.045H10v3.868h5.382a4.6 4.6 0 01-1.996 3.018v2.51h3.232c1.891-1.742 2.982-4.305 2.982-7.35z"
               fill="#4285F4"
@@ -151,20 +176,30 @@ export default function SignUpPage() {
               fill="#EA4335"
             />
           </svg>
-          <span className="text-gray-700 font-medium">Create account with Google</span>
+          <span className="text-gray-700 font-medium">
+            Create account with Google
+          </span>
         </button>
 
         <button
           onClick={handleMicrosoftSignUp}
           className="flex items-center justify-center gap-3 w-full px-4 py-3 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors shadow-sm"
         >
-          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 20 20"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
             <path d="M0 0h9.524v9.524H0V0z" fill="#F25022" />
             <path d="M10.476 0H20v9.524h-9.524V0z" fill="#7FBA00" />
             <path d="M0 10.476h9.524V20H0v-9.524z" fill="#00A4EF" />
             <path d="M10.476 10.476H20V20h-9.524v-9.524z" fill="#FFB900" />
           </svg>
-          <span className="text-gray-700 font-medium">Create account with Microsoft</span>
+          <span className="text-gray-700 font-medium">
+            Create account with Microsoft
+          </span>
         </button>
 
         <p className="text-sm mt-2 text-muted-foreground">
@@ -174,7 +209,9 @@ export default function SignUpPage() {
           </Link>
         </p>
 
-        {errorMessage && <p className="text-md mt-2 text-red-500">{errorMessage}</p>}
+        {errorMessage && (
+          <p className="text-md mt-2 text-red-500">{errorMessage}</p>
+        )}
       </div>
     </div>
   );

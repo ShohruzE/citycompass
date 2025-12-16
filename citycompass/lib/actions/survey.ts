@@ -16,22 +16,31 @@ export async function submitSurvey(formData: SurveyFormData) {
   const data = validatedFields.data;
 
   try {
-    // Send the complete survey data to the FastAPI backend
+    // Get token from localStorage (this needs to be done client-side)
+    // Since this is a server action, we need to pass the token from the client
     const response = await fetch(`${process.env.API_BASE_URL}/api/survey`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
+      credentials: "include",
       body: JSON.stringify(data),
     });
+
     if (!response.ok) {
-      throw new Error("Failed to submit survey");
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.detail || "Failed to submit survey");
     }
-    // revalidatePath("/survey");
+
+    const result = await response.json();
+    return { success: true, data: result };
   } catch (error) {
     console.error("Error submitting survey:", error);
     return {
-      message: "Failed to submit survey. Please try again.",
+      message:
+        error instanceof Error
+          ? error.message
+          : "Failed to submit survey. Please try again.",
     };
   }
 }
