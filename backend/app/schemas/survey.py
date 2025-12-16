@@ -20,7 +20,6 @@ class SurveyRequest(BaseModel):
     
     # Step 1: Personal Information
     name: str = Field(..., min_length=2, description="Full name of the respondent")
-    email: EmailStr = Field(..., description="Email address")
     age: int = Field(..., ge=18, le=100, description="Age must be between 18 and 100")
     borough: BoroughType = Field(..., description="NYC Borough")
     neighborhood: str = Field(..., min_length=2, description="Neighborhood name")
@@ -73,7 +72,6 @@ class SurveyRequest(BaseModel):
         "json_schema_extra": {
             "example": {
                 "name": "John Doe",
-                "email": "john@example.com",
                 "age": 30,
                 "borough": "Brooklyn",
                 "neighborhood": "Williamsburg",
@@ -111,7 +109,6 @@ class SurveyRequest(BaseModel):
 class SurveyResponse(BaseModel):
     """Survey response schema"""
     id: int
-    user_email: str
     name: str
     age: int
     borough: str
