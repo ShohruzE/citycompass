@@ -9,7 +9,7 @@ import { useSearchParams } from "next/navigation";
 
 async function testing() {
   const API_BASE = (process.env.NEXT_PUBLIC_API_BASE as string) || "http://localhost:8000";
-  const response = await fetch(`${API_BASE}/auth/test`, {
+  const response = await fetch(`${API_BASE}/api/auth/test`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     credentials: "include",
@@ -47,7 +47,7 @@ const searchParams = useSearchParams();
 
       // const backendURL = {process.env.BACKEND_URL};
       // const backendURL = "http://127.0.0.1:8000";
-      window.location.href = `${API_BASE}/auth/google-login`;
+      window.location.href = `${API_BASE}/api/auth/google-login`;
     } catch (err) {
       setErrorMessage("failed to initiate Google Sign in");
       setIsLoading(false);
@@ -61,7 +61,7 @@ const searchParams = useSearchParams();
 
       // const backendURL = {process.env.BACKEND_URL};
       // const backendURL = "http://localhost:8000";
-      window.location.href = `${API_BASE}/auth/ms-login`;
+      window.location.href = `${API_BASE}/api/auth/ms-login`;
     } catch (err) {
       setErrorMessage("failed to initiate Google Sign in");
       setIsLoading(false);
@@ -78,7 +78,7 @@ const searchParams = useSearchParams();
 
       // const backendURL = "http://127.0.0.1:8000/auth/email-auth";
 
-      const response = await fetch(`${API_BASE}/auth/email-auth`, {
+      const response = await fetch(`${API_BASE}/api/auth/email-auth`, {
         credentials: "include",
         method: "POST",
         headers: {
