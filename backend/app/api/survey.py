@@ -54,7 +54,8 @@ async def submit_survey(
 
     try:
         # Extract user email from session
-        user_email = current_user.get("email")
+        # The email is stored under 'username' key in the JWT token
+        user_email = current_user.get("username") or current_user.get("email")
         if not user_email:
             logger.error(f"User session missing email: {current_user}")
             raise HTTPException(
@@ -166,18 +167,20 @@ async def submit_survey(
 async def get_my_surveys(
     db: db_dependency,
     current_user: user_dependency,
-) -> list[SurveyResponse]:
+) -> list[dict]:
     """
-    Get all survey submissions for the authenticated user.
+    Get all survey submissions for the authenticated user with full details.
 
     **Authentication Required**: User must be logged in via OAuth.
 
-    **Returns**: List of all surveys submitted by the user.
+    **Returns**: List of all surveys submitted by the user with complete response data.
     """
 
     try:
-        user_email = current_user.get("email")
+        # The email is stored under 'username' key in the JWT token
+        user_email = current_user.get("username") or current_user.get("email")
         if not user_email:
+            logger.error(f"User session missing email: {current_user}")
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="User email not found in session.",
@@ -195,12 +198,40 @@ async def get_my_surveys(
 
         return [
             SurveyResponse(
-                id=survey.id,
-                user_email=survey.user_email,
-                borough=survey.borough,
-                neighborhood=survey.neighborhood,
-                created_at=survey.created_at,
-                message="Survey response",
+                id= survey.id,
+                user_email= survey.user_email,
+                name= survey.name,
+                age= survey.age,
+                borough= survey.borough,
+                neighborhood= survey.neighborhood,
+                zip_code= survey.zip_code,
+                residency_duration= survey.residency_duration,
+                safety_rating= survey.safety_rating,
+                time_of_day_safety= survey.time_of_day_safety,
+                crime_concern_level= survey.crime_concern_level,
+                police_presence_rating= survey.police_presence_rating,
+                safety_testimonial= survey.safety_testimonial,
+                street_cleanliness_rating= survey.street_cleanliness_rating,
+                trash_management_rating= survey.trash_management_rating,
+                parks_quality_rating= survey.parks_quality_rating,
+                noise_level= survey.noise_level,
+                environmental_testimonial= survey.environmental_testimonial,
+                grocery_store_access= survey.grocery_store_access,
+                restaurant_variety_rating= survey.restaurant_variety_rating,
+                food_affordability_rating= survey.food_affordability_rating,
+                farmers_market_access= survey.farmers_market_access,
+                food_access_testimonial= survey.food_access_testimonial,
+                rent_affordability= survey.rent_affordability,
+                cost_of_living= survey.cost_of_living,
+                value_for_money_rating= survey.value_for_money_rating,
+                financial_testimonial= survey.financial_testimonial,
+                overall_rating= survey.overall_rating,
+                would_recommend= survey.would_recommend,
+                biggest_strength= survey.biggest_strength,
+                area_for_improvement= survey.area_for_improvement,
+                additional_comments= survey.additional_comments,
+                created_at= survey.created_at,
+                message= "Survey response",
             )
             for survey in surveys
         ]
@@ -233,8 +264,10 @@ async def get_current_location(
     """
 
     try:
-        user_email = current_user.get("email")
+        # The email is stored under 'username' key in the JWT token
+        user_email = current_user.get("username") or current_user.get("email")
         if not user_email:
+            logger.error(f"User session missing email: {current_user}")
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="User email not found in session.",

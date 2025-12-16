@@ -55,6 +55,7 @@ app.add_middleware(
 # allow all origins to communicate with backend
 origins = [
     "http://localhost:3000",
+    "http://localhost:8000",
     "http://127.0.0.1:8000",
     "http://172.24.144.1:3000",
     "http://localhost:5173",  # Add Vite port if using Vite
