@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
 from typing import Annotated
 from pydantic import ValidationError
+from fastapi.encoders import jsonable_encoder
 
 from app.core.db import get_db
 from app.models.models import SurveyResponse as SurveyResponseModel
@@ -54,7 +55,8 @@ async def submit_survey(
 
     try:
         # Extract user email from session
-        user_email = current_user.get("email")
+        # The email is stored under 'username' key in the JWT token
+        user_email = current_user.get("username") or current_user.get("email")
         if not user_email:
             logger.error(f"User session missing email: {current_user}")
             raise HTTPException(
@@ -70,7 +72,7 @@ async def submit_survey(
             user_email=user_email,
             # Step 1: Personal Information
             name=survey_data.name,
-            email=survey_data.email,
+            email=user_email,
             age=survey_data.age,
             borough=survey_data.borough,
             neighborhood=survey_data.neighborhood,
@@ -118,13 +120,40 @@ async def submit_survey(
             f"Neighborhood: {survey_data.neighborhood}"
         )
 
-        # Return response
         return SurveyResponse(
             id=db_survey.id,
             user_email=user_email,
-            borough=survey_data.borough,
-            neighborhood=survey_data.neighborhood,
-            created_at=db_survey.created_at,
+            name=db_survey.name,
+            age=db_survey.age,
+            borough=db_survey.borough,
+            neighborhood=db_survey.neighborhood,
+            zip_code=db_survey.zip_code,
+            residency_duration=db_survey.residency_duration,
+            safety_rating=db_survey.safety_rating,
+            time_of_day_safety=db_survey.time_of_day_safety,
+            crime_concern_level=db_survey.crime_concern_level,
+            police_presence_rating=db_survey.police_presence_rating,
+            safety_testimonial=db_survey.safety_testimonial or "",
+            street_cleanliness_rating=db_survey.street_cleanliness_rating,
+            trash_management_rating=db_survey.trash_management_rating,
+            parks_quality_rating=db_survey.parks_quality_rating,
+            noise_level=db_survey.noise_level,
+            environmental_testimonial=db_survey.environmental_testimonial or "",
+            grocery_store_access=db_survey.grocery_store_access,
+            restaurant_variety_rating=db_survey.restaurant_variety_rating,
+            food_affordability_rating=db_survey.food_affordability_rating,
+            farmers_market_access=db_survey.farmers_market_access,
+            food_access_testimonial=db_survey.food_access_testimonial or "",
+            rent_affordability=db_survey.rent_affordability,
+            cost_of_living=db_survey.cost_of_living,
+            value_for_money_rating=db_survey.value_for_money_rating,
+            financial_testimonial=db_survey.financial_testimonial or "",
+            overall_rating=db_survey.overall_rating,
+            would_recommend=db_survey.would_recommend,
+            biggest_strength=db_survey.biggest_strength,
+            area_for_improvement=db_survey.area_for_improvement,
+            additional_comments=db_survey.additional_comments or "",
+            created_at=db_survey.created_at.isoformat(),
             message="Survey submitted successfully! Thank you for your feedback.",
         )
 
@@ -166,18 +195,20 @@ async def submit_survey(
 async def get_my_surveys(
     db: db_dependency,
     current_user: user_dependency,
-) -> list[SurveyResponse]:
+) -> list[dict]:
     """
-    Get all survey submissions for the authenticated user.
+    Get all survey submissions for the authenticated user with full details.
 
     **Authentication Required**: User must be logged in via OAuth.
 
-    **Returns**: List of all surveys submitted by the user.
+    **Returns**: List of all surveys submitted by the user with complete response data.
     """
 
     try:
-        user_email = current_user.get("email")
+        # The email is stored under 'username' key in the JWT token
+        user_email = current_user.get("username") or current_user.get("email")
         if not user_email:
+            logger.error(f"User session missing email: {current_user}")
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="User email not found in session.",
@@ -196,10 +227,38 @@ async def get_my_surveys(
         return [
             SurveyResponse(
                 id=survey.id,
-                user_email=survey.user_email,
+                user_email=user_email,
+                name=survey.name,
+                age=survey.age,
                 borough=survey.borough,
                 neighborhood=survey.neighborhood,
-                created_at=survey.created_at,
+                zip_code=survey.zip_code,
+                residency_duration=survey.residency_duration,
+                safety_rating=survey.safety_rating,
+                time_of_day_safety=survey.time_of_day_safety,
+                crime_concern_level=survey.crime_concern_level,
+                police_presence_rating=survey.police_presence_rating,
+                safety_testimonial=survey.safety_testimonial,
+                street_cleanliness_rating=survey.street_cleanliness_rating,
+                trash_management_rating=survey.trash_management_rating,
+                parks_quality_rating=survey.parks_quality_rating,
+                noise_level=survey.noise_level,
+                environmental_testimonial=survey.environmental_testimonial,
+                grocery_store_access=survey.grocery_store_access,
+                restaurant_variety_rating=survey.restaurant_variety_rating,
+                food_affordability_rating=survey.food_affordability_rating,
+                farmers_market_access=survey.farmers_market_access,
+                food_access_testimonial=survey.food_access_testimonial,
+                rent_affordability=survey.rent_affordability,
+                cost_of_living=survey.cost_of_living,
+                value_for_money_rating=survey.value_for_money_rating,
+                financial_testimonial=survey.financial_testimonial,
+                overall_rating=survey.overall_rating,
+                would_recommend=survey.would_recommend,
+                biggest_strength=survey.biggest_strength,
+                area_for_improvement=survey.area_for_improvement,
+                additional_comments=survey.additional_comments,
+                created_at=survey.created_at.isoformat(),  # ensure JSON-serializable
                 message="Survey response",
             )
             for survey in surveys
@@ -233,8 +292,10 @@ async def get_current_location(
     """
 
     try:
-        user_email = current_user.get("email")
+        # The email is stored under 'username' key in the JWT token
+        user_email = current_user.get("username") or current_user.get("email")
         if not user_email:
+            logger.error(f"User session missing email: {current_user}")
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="User email not found in session.",

@@ -22,9 +22,9 @@ jobs:
       MICROSOFT_CLIENT_ID: ${{ secrets.MICROSOFT_CLIENT_ID }}
       GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
       GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+      SUMO_LOGIC_URL: ${{ secrets.SUMO_LOGIC_URL }}
       SECRET_KEY: ${{ secrets.SECRET_KEY }}
       ACS_API_KEY: ${{ secrets.ACS_API_KEY }}
-      SUMO_LOGIC_URL: ${{ secrets.SUMO_LOGIC_URL }}
       
     steps:
       - name: Checkout code

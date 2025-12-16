@@ -334,7 +334,10 @@ export default function FullPageMapClient() {
         .then((res) => res.json())
         .then((data) => {
           if (data && data.length > 0) {
-            const coords: [number, number] = [parseFloat(data[0].lat), parseFloat(data[0].lon)];
+            const coords: [number, number] = [
+              parseFloat(data[0].lat),
+              parseFloat(data[0].lon),
+            ];
             console.log("Current location marker set at:", coords);
             setZipMarker(coords);
           } else {
@@ -343,7 +346,9 @@ export default function FullPageMapClient() {
         })
         .catch((err) => console.error("Error geocoding ZIP:", err));
     } else {
-      console.log("No ZIP code available from UserLocationContext. Have you completed the survey?");
+      console.log(
+        "No ZIP code available from UserLocationContext. Have you completed the survey?"
+      );
     }
   }, [zipCode]);
 
@@ -445,7 +450,9 @@ export default function FullPageMapClient() {
       null;
 
     // Check if district has data (not in missing districts list)
-    const hasData = districtID ? !MISSING_DISTRICTS.includes(districtID as string) : false;
+    const hasData = districtID
+      ? !MISSING_DISTRICTS.includes(districtID as string)
+      : false;
 
     const defaultStyle: PathOptions = {
       fillColor: hasData ? "#7baac8" : "#d1d5db",
