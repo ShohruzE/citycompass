@@ -284,6 +284,8 @@ async def google_auth(request: Request, db:db_dependency):
     
     redirect_url = f"{FRONTEND_URL}/dashboard?token={token}&user={db_user.username}"
 
+    logging.info(redirect_url)
+    
     return RedirectResponse(url=redirect_url)
 
 
