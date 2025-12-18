@@ -11,6 +11,7 @@ import re
 
 # connect to Postgres Database and read JSON from responses
 from app.core.db import SessionLocal, get_db
+from app.models.models import SurveyResponse as SurveyResponseModel
 from pydantic import BaseModel
 from starlette.config import Config
 from authlib.integrations.starlette_client import OAuth, OAuthError
@@ -248,6 +249,8 @@ async def google_auth(request: Request, db:db_dependency):
         request.session["user"] = dict(user)
 
     # test if the user if authenticated in the database, if not add them to db
+    redirect_page = "dashboard"  # Default to dashboard
+
     try:
         # if user is not found, user.email will be null
         db_user = authenticate_sso_user(user.email, db)
@@ -255,11 +258,13 @@ async def google_auth(request: Request, db:db_dependency):
             logging.info(user.email + " not found in db, gmail user is being added to database")
             create_google_user(user.email,db)
             db_user = authenticate_sso_user(user.email, db)
-            # raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
-            #                     detail='Could not validate user.')
+            redirect_page = "survey"  # New user, redirect to survey
         else:
             logging.info( "user successfully created/found with the following id: " + str(db_user.id))
-            # print(db_user.id)
+            has_survey = db.query(SurveyResponseModel).filter(
+                SurveyResponseModel.user_email == db_user.username
+            ).first() is not None
+            redirect_page = "dashboard" if has_survey else "survey"
     except HTTPException:
         logging.error(error)
     
@@ -282,7 +287,7 @@ async def google_auth(request: Request, db:db_dependency):
     # token = create_access_token(user.email, db_user.id, timedelta(minutes=30))
     token = create_access_token(db_user.username, db_user.id, timedelta(minutes=30))
     
-    redirect_url = f"{FRONTEND_URL}/dashboard?token={token}&user={db_user.username}"
+    redirect_url = f"{FRONTEND_URL}/{redirect_page}?token={token}&user={db_user.username}"
 
     logging.info(redirect_url)
     
@@ -334,16 +339,21 @@ async def ms_auth(request: Request, db: db_dependency):
                 url=f"{FRONTEND_URL}/sign-in?error=ms_server_error"
             )
 
-
+    redirect_page = "dashboard"
     try:
         db_user = authenticate_sso_user(user["email"], db)
         # print("db_user: ", db_user)
         if db_user == False:
-            logging.info(user["email"] + " not found in db, gmail user is being added to database")
+            logging.info(user["email"] + " not found in db, microsoft user is being added to database")
             create_microsoft_user(user["email"],db)
             db_user = authenticate_sso_user(user["email"], db)
+            redirect_page = "survey"  # New user, redirect to survey
         else:
             logging.info( "user successfully created/found with the following id: " + str(db_user.id))
+            has_survey = db.query(SurveyResponseModel).filter(
+                SurveyResponseModel.user_email == db_user.username
+            ).first() is not None
+            redirect_page = "dashboard" if has_survey else "survey" 
     except Exception as error:
         logging.error( f"OAuth error: {str(error)}")
         # print(f"OAuth error: {str(error)}")
@@ -354,7 +364,7 @@ async def ms_auth(request: Request, db: db_dependency):
 
     token = create_access_token(db_user.username, db_user.id, timedelta(minutes=30))
     
-    redirect_url = f"{FRONTEND_URL}/dashboard?token={token}&user={db_user.username}"
+    redirect_url = f"{FRONTEND_URL}/{redirect_page}?token={token}&user={db_user.username}"
 
     return RedirectResponse(url=redirect_url)
  
