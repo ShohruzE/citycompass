@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { surveyFormSchema, type SurveyFormData } from "@/lib/schemas/survey";
-import { submitSurvey } from "@/lib/actions/survey";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -15,9 +14,10 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
 import { useLocalStorage } from "@/lib/hooks/useLocalStorage";
-import { ChevronLeft, ChevronRight, Check } from "lucide-react";
+import { ChevronLeft, ChevronRight, Check, AlertCircle } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { useUserLocation } from "@/lib/contexts/UserLocationContext";
+import { useRouter, useSearchParams } from "next/navigation";
 
 const STORAGE_KEY = "citycompass-survey-draft";
 
@@ -34,14 +34,47 @@ export function SurveyForm() {
   const [currentStep, setCurrentStep] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
+  const [hasExistingSurvey, setHasExistingSurvey] = useState(false);
+  const [isLoadingExisting, setIsLoadingExisting] = useState(true);
   const [savedData, setSavedData, clearSavedData] = useLocalStorage<Partial<SurveyFormData>>(STORAGE_KEY, {});
   const { refreshLocation } = useUserLocation();
+
+
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    // Check if token is in URL (from OAuth redirect)'
+    const tokenFromUrl = searchParams.get("token");
+    console.log(tokenFromUrl)
+    
+    if (tokenFromUrl) {
+      // Save token to localStorage
+      localStorage.setItem("token", tokenFromUrl);
+      
+      // Clean up URL by removing token parameter
+      window.history.replaceState({}, '', '/dashboard');
+    }
+    
+    // Check if user is authenticated
+    const token = localStorage.getItem("token");
+    
+    // redirect unauthenticated user
+    if (!token) {
+      // No token found, redirect to sign in
+      router.push("/sign-in");
+    } else {
+      setIsLoading(false);
+    }
+  }, [searchParams, router]);
+        
+
 
   const form = useForm<SurveyFormData>({
     resolver: zodResolver(surveyFormSchema),
     defaultValues: {
       name: "",
-      email: "",
       age: 18,
       borough: undefined,
       neighborhood: "",
@@ -74,6 +107,103 @@ export function SurveyForm() {
     },
   });
 
+  // Check for existing survey on mount
+  useEffect(() => {
+    const checkExistingSurvey = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) {
+          setIsLoadingExisting(false);
+          return;
+        }
+
+        const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8000";
+        const response = await fetch(`${API_BASE}/api/survey/my-surveys`, {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          credentials: "include",
+        });
+
+        if (response.ok) {
+          const surveys = await response.json();
+          if (surveys && surveys.length > 0) {
+            setHasExistingSurvey(true);
+
+            // Load the latest survey data into the form
+            const latestSurvey = surveys[0];
+            console.log("Latest survey data:", latestSurvey);
+
+            // Create a mapping from API field names to form field names
+            const fieldMapping: Record<string, keyof SurveyFormData> = {
+              name: "name",
+              age: "age",
+              borough: "borough",
+              neighborhood: "neighborhood",
+              zip_code: "zipCode",
+              residency_duration: "residencyDuration",
+              safety_rating: "safetyRating",
+              time_of_day_safety: "timeOfDaySafety",
+              crime_concern_level: "crimeConcernLevel",
+              police_presence_rating: "policePresenceRating",
+              safety_testimonial: "safetyTestimonial",
+              street_cleanliness_rating: "streetCleanlinessRating",
+              trash_management_rating: "trashManagementRating",
+              parks_quality_rating: "parksQualityRating",
+              noise_level: "noiseLevel",
+              environmental_testimonial: "environmentalTestimonial",
+              grocery_store_access: "groceryStoreAccess",
+              restaurant_variety_rating: "restaurantVarietyRating",
+              food_affordability_rating: "foodAffordabilityRating",
+              farmers_market_access: "farmersMarketAccess",
+              food_access_testimonial: "foodAccessTestimonial",
+              rent_affordability: "rentAffordability",
+              cost_of_living: "costOfLiving",
+              value_for_money_rating: "valueForMoneyRating",
+              financial_testimonial: "financialTestimonial",
+              overall_rating: "overallRating",
+              would_recommend: "wouldRecommend",
+              biggest_strength: "biggestStrength",
+              area_for_improvement: "areaForImprovement",
+              additional_comments: "additionalComments",
+            };
+
+            // Set all form values from the survey data
+            Object.entries(latestSurvey).forEach(([apiKey, value]) => {
+              const formKey = fieldMapping[apiKey];
+
+              if (formKey && value !== null && value !== undefined) {
+                // Handle boolean values
+                if (typeof value === "boolean") {
+                  form.setValue(formKey, value as never);
+                }
+                // Handle numeric values
+                else if (typeof value === "number") {
+                  form.setValue(formKey, value as never);
+                }
+                // Handle string values
+                else if (typeof value === "string") {
+                  form.setValue(formKey, value as never);
+                }
+              }
+            });
+
+            console.log("Form values after loading survey:", form.getValues());
+          }
+        }
+      } catch (error) {
+        console.error("Error checking for existing surveys:", error);
+      } finally {
+        setIsLoadingExisting(false);
+      }
+    };
+
+    checkExistingSurvey();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Load saved data on mount
   useEffect(() => {
     if (Object.keys(savedData).length > 0) {
@@ -96,15 +226,7 @@ export function SurveyForm() {
 
     switch (currentStep) {
       case 0:
-        isValid = await form.trigger([
-          "name",
-          "email",
-          "age",
-          "borough",
-          "neighborhood",
-          "zipCode",
-          "residencyDuration",
-        ]);
+        isValid = await form.trigger(["name", "age", "borough", "neighborhood", "zipCode", "residencyDuration"]);
         break;
       case 1:
         isValid = await form.trigger([
@@ -175,31 +297,48 @@ export function SurveyForm() {
     setServerError(null);
 
     try {
-      const result = await submitSurvey(data);
+      // Get token from localStorage
+      const token = localStorage.getItem("token");
 
-      if (result?.errors) {
-        Object.entries(result.errors).forEach(([field, errors]) => {
-          if (errors) {
-            form.setError(field as keyof SurveyFormData, {
-              type: "server",
-              message: errors[0],
-            });
-          }
-        });
-      } else if (result?.message) {
-        setServerError(result.message);
-      } else {
-        // Success - clear saved data and refresh location
-        clearSavedData();
-        try {
-          await refreshLocation();
-        } catch (locationError) {
-          console.error("Failed to refresh location after survey submission:", locationError);
-          // Don't fail the submission if location refresh fails
-        }
+      if (!token) {
+        setServerError("Authentication token not found. Please log in again.");
+        setIsSubmitting(false);
+        return;
       }
-    } catch {
-      setServerError("An unexpected error occurred. Please try again.");
+
+      const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8000";
+
+      const response = await fetch(`${API_BASE}/api/survey`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        credentials: "include",
+        body: JSON.stringify(data),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+
+      // Success - clear saved data and refresh location
+      clearSavedData();
+      try {
+        await refreshLocation();
+      } catch (locationError) {
+        console.error("Failed to refresh location:", locationError);
+      }
+
+      // Show success message or redirect
+      alert("Survey submitted successfully!");
+      window.location.href = "/dashboard";
+    } catch (error) {
+      console.error("Error submitting survey:", error);
+      setServerError(error instanceof Error ? error.message : "Failed to submit survey. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
@@ -207,11 +346,32 @@ export function SurveyForm() {
 
   const progress = ((currentStep + 1) / STEPS.length) * 100;
 
+  if (isLoadingExisting) {
+    return (
+      <Card className="w-full max-w-3xl mx-auto">
+        <CardContent className="pt-6">
+          <p className="text-center text-muted-foreground">Loading survey...</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <Card className="w-full max-w-3xl mx-auto">
       <CardHeader>
         <div className="space-y-2">
           <CardTitle>NYC Neighborhood Survey</CardTitle>
+          {hasExistingSurvey && (
+            <div className="flex items-start gap-3 p-3 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-md">
+              <AlertCircle className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
+              <div>
+                <p className="font-medium text-blue-900 dark:text-blue-100">You've already completed this survey</p>
+                <p className="text-sm text-blue-800 dark:text-blue-200 mt-1">
+                  You can update your responses and submit again. Your previous answers are shown below.
+                </p>
+              </div>
+            </div>
+          )}
           <CardDescription>{STEPS[currentStep].description}</CardDescription>
           <div className="pt-2">
             <div className="flex justify-between text-xs text-muted-foreground mb-2">
@@ -255,22 +415,6 @@ export function SurveyForm() {
 
                   <FormField
                     control={form.control}
-                    name="email"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Email *</FormLabel>
-                        <FormControl>
-                          <Input type="email" placeholder="john@example.com" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
                     name="age"
                     render={({ field }) => (
                       <FormItem>
@@ -287,7 +431,9 @@ export function SurveyForm() {
                       </FormItem>
                     )}
                   />
+                </div>
 
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
                     name="borough"
@@ -312,9 +458,7 @@ export function SurveyForm() {
                       </FormItem>
                     )}
                   />
-                </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
                     name="neighborhood"
@@ -328,7 +472,9 @@ export function SurveyForm() {
                       </FormItem>
                     )}
                   />
+                </div>
 
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
                     name="zipCode"
@@ -342,32 +488,32 @@ export function SurveyForm() {
                       </FormItem>
                     )}
                   />
-                </div>
 
-                <FormField
-                  control={form.control}
-                  name="residencyDuration"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>How long have you lived in this neighborhood? *</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select duration" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="< 6 months">Less than 6 months</SelectItem>
-                          <SelectItem value="6-12 months">6-12 months</SelectItem>
-                          <SelectItem value="1-3 years">1-3 years</SelectItem>
-                          <SelectItem value="3-5 years">3-5 years</SelectItem>
-                          <SelectItem value="5+ years">5+ years</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                  <FormField
+                    control={form.control}
+                    name="residencyDuration"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>How long have you lived here? *</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select duration" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="< 6 months">Less than 6 months</SelectItem>
+                            <SelectItem value="6-12 months">6-12 months</SelectItem>
+                            <SelectItem value="1-3 years">1-3 years</SelectItem>
+                            <SelectItem value="3-5 years">3-5 years</SelectItem>
+                            <SelectItem value="5+ years">5+ years</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
               </div>
             )}
 
@@ -1055,7 +1201,7 @@ export function SurveyForm() {
                     "Submitting..."
                   ) : (
                     <>
-                      Submit Survey
+                      {hasExistingSurvey ? "Update Survey" : "Submit Survey"}
                       <Check className="w-4 h-4 ml-2" />
                     </>
                   )}

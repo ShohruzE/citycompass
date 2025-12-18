@@ -19,7 +19,6 @@ export default function SignUpPage() {
     } catch {
       setErrorMessage("failed to initiate Google Sign in");
     }
-
   };
 
   const handleMicrosoftSignUp = () => {
@@ -32,9 +31,9 @@ export default function SignUpPage() {
       setErrorMessage("failed to initiate Microsoft Sign in");
     }
     setTimeout(() => {
-        window.location.href = "/dashboard";
-      }, 1000);
-      // console.log('cookie', data);
+      window.location.href = "/survey";
+    }, 1000);
+    // console.log('cookie', data);
   };
 
   const handleEmailSignup = async (formData: FormData) => {
@@ -63,23 +62,30 @@ export default function SignUpPage() {
         throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
       }
 
-      const data = await response.json();
       setSignUpSuccess(true);
-      // console.log('Login successful:', data);
 
-      // Store token if your backend returns one
+      // Automatically log in the user after successful signup
+      const loginResponse = await fetch(`${API_BASE}/api/auth/email-auth`, {
+        credentials: "include",
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          username: email,
+          password: password,
+        }),
+      });
 
-      // localStorage.setItem('token', data.cookie);
+      if (loginResponse.ok) {
+        const loginData = await loginResponse.json();
+        localStorage.setItem("token", loginData.token);
 
-      // Redirect or update UI on success
-      console.log("Cookies after login:", document.cookie);
-
-      // Wait a moment then redirect
-      // setTimeout(() => {
-      //   window.location.href = "/dashboard";
-      // }, 1000);
-      // console.log('cookie', data);
-      console.log("All cookies:", document.cookie);
+        // New users always go to survey (has_survey will be false)
+        setTimeout(() => {
+          window.location.href = "/survey";
+        }, 1500);
+      }
     } catch (err) {
       console.error("Login error:", err);
       setErrorMessage(err instanceof Error ? err.message : "Failed to sign in with email");
@@ -116,9 +122,7 @@ export default function SignUpPage() {
           <div className="w-full max-w-sm p-6 bg-green-50 border border-green-200 rounded-md">
             <p className="text-green-700 font-semibold mb-4">Sign up successful!</p>
             <Link href="/sign-in">
-              <Button className="w-full bg-primary text-primary-foreground hover:bg-primary/80">
-                Go to Sign In
-              </Button>
+              <Button className="w-full bg-primary text-primary-foreground hover:bg-primary/80">Go to Sign In</Button>
             </Link>
           </div>
         )}

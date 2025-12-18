@@ -316,6 +316,12 @@ async def ms_auth(request: Request, db: db_dependency):
             "family_name": user_data.get("surname"),
         }
     except OAuthError as error:
+        if user is None:
+            logging.error("MS login error occurred" + error)
+            return RedirectResponse(
+                # redirect_url = f"{FRONTEND_URL}/dashboard?token={token}&user={db_user.username}"
+                url=f"{FRONTEND_URL}/sign-in?error=auth_failed"
+            )
         logging.error(user["email"] + "login error occurred" + error)
         return RedirectResponse(
                 # redirect_url = f"{FRONTEND_URL}/dashboard?token={token}&user={db_user.username}"
