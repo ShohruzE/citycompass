@@ -64,6 +64,7 @@ origins = [
     "http://172.20.208.1:3000",
     "http://172.20.208.1",  # Add all potential frontend URLs
     "https://citycompass.vercel.app",
+    'https://citycompass-git-feat-login-signup-shohruzes-projects.vercel.app'
 ]
 
 app.add_middleware(

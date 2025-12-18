@@ -250,6 +250,7 @@ async def google_auth(request: Request, db:db_dependency):
 
     # test if the user if authenticated in the database, if not add them to db
     redirect_page = "dashboard"  # Default to dashboard
+
     try:
         # if user is not found, user.email will be null
         db_user = authenticate_sso_user(user.email, db)
@@ -271,6 +272,7 @@ async def google_auth(request: Request, db:db_dependency):
         logging.info(db_user)
     else:
         logging.warning("db user was not created, function did catch the error")
+
     # token = create_access_token(user.email, db_user.id, timedelta(minutes=30))
     # response = RedirectResponse(url="http://localhost:3000/dashboard")
     
@@ -287,6 +289,8 @@ async def google_auth(request: Request, db:db_dependency):
     
     redirect_url = f"{FRONTEND_URL}/{redirect_page}?token={token}&user={db_user.username}"
 
+    logging.info(redirect_url)
+    
     return RedirectResponse(url=redirect_url)
 
 
@@ -317,8 +321,16 @@ async def ms_auth(request: Request, db: db_dependency):
             "family_name": user_data.get("surname"),
         }
     except OAuthError as error:
+        if user is None:
+            logging.error("MS login error occurred" + error)
+            return RedirectResponse(
+                # redirect_url = f"{FRONTEND_URL}/dashboard?token={token}&user={db_user.username}"
+                url=f"{FRONTEND_URL}/sign-in?error=auth_failed"
+            )
         logging.error(user["email"] + "login error occurred" + error)
         return RedirectResponse(
+                # redirect_url = f"{FRONTEND_URL}/dashboard?token={token}&user={db_user.username}"
+
                 url=f"{FRONTEND_URL}/sign-in?error=auth_failed"
             )
     except Exception as error:
@@ -330,6 +342,7 @@ async def ms_auth(request: Request, db: db_dependency):
     redirect_page = "dashboard"
     try:
         db_user = authenticate_sso_user(user["email"], db)
+        # print("db_user: ", db_user)
         if db_user == False:
             logging.info(user["email"] + " not found in db, microsoft user is being added to database")
             create_microsoft_user(user["email"],db)
@@ -340,12 +353,14 @@ async def ms_auth(request: Request, db: db_dependency):
             has_survey = db.query(SurveyResponseModel).filter(
                 SurveyResponseModel.user_email == db_user.username
             ).first() is not None
-            redirect_page = "dashboard" if has_survey else "survey"
+            redirect_page = "dashboard" if has_survey else "survey" 
     except Exception as error:
         logging.error( f"OAuth error: {str(error)}")
+        # print(f"OAuth error: {str(error)}")
         return RedirectResponse(f"{FRONTEND_URL}/sign-up?error=server_error")
     except error:
         logging.error(error)
+        # print(error)
 
     token = create_access_token(db_user.username, db_user.id, timedelta(minutes=30))
     
@@ -473,6 +488,7 @@ async def test():
 @router.post("/email-auth")
 async def email_login(db: db_dependency, user_login_request: UserLoginRequest):
     try:
+        # db_user = (user.email, db)
         db_user = authenticate_user(
             user_login_request.username, user_login_request.password, db
         )
@@ -485,21 +501,16 @@ async def email_login(db: db_dependency, user_login_request: UserLoginRequest):
         else:
             print(db_user.id)
     except Exception as error:
+        # print("error")
         print(error)
 
     token = create_access_token(db_user.username, db_user.id, timedelta(minutes=30))
-    
-    # Check if user has completed a survey
-    has_survey = db.query(SurveyResponseModel).filter(
-        SurveyResponseModel.user_email == db_user.username
-    ).first() is not None
-    
     response = JSONResponse(
         content={
             "message": "Login successful",
             "user": user_login_request.username,
             "token": token,
-            "has_survey": has_survey,
+            # Include any other user data you need
         }
     )
 

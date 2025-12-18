@@ -33,7 +33,7 @@ export default function CompareView() {
   //     setLoading(true);
   //     try {
   //       const API_BASE =
-  //         (process.env.NEXT_PUBLIC_API_BASE as string) ||
+  //         (process.env.API_BASE_URL as string) ||
   //         "http://127.0.0.1:8000";
   //       const res = await fetch(
   //         `${API_BASE}/api/ml/predict?community_district=${encodeURIComponent(
@@ -72,11 +72,7 @@ export default function CompareView() {
   //   fetchNsqiForZip(zipB, setNsqiB, setNsqiLoadingB);
   // }, [zipA, zipB]);
 
-  const compare = (
-    aVal?: number | null,
-    bVal?: number | null,
-    higherIsBetter = true
-  ) => {
+  const compare = (aVal?: number | null, bVal?: number | null, higherIsBetter = true) => {
     if (aVal == null || bVal == null) return "na";
     if (aVal === bVal) return "tie";
     if (higherIsBetter) return aVal > bVal ? "a" : "b";
@@ -115,8 +111,7 @@ export default function CompareView() {
         a: summaryA.population,
         b: summaryB.population,
         higherIsBetter: true,
-        format: (v: number | null) =>
-          v == null ? "—" : Number(v).toLocaleString(),
+        format: (v: number | null) => (v == null ? "—" : Number(v).toLocaleString()),
       },
       {
         key: "median_income",
@@ -124,8 +119,7 @@ export default function CompareView() {
         a: summaryA.income,
         b: summaryB.income,
         higherIsBetter: true,
-        format: (v: number | null) =>
-          v == null ? "—" : `$${Number(v).toLocaleString()}`,
+        format: (v: number | null) => (v == null ? "—" : `$${Number(v).toLocaleString()}`),
       },
       {
         key: "poverty_rate",
@@ -143,8 +137,7 @@ export default function CompareView() {
         a: summaryA.nsqi,
         b: summaryB.nsqi,
         higherIsBetter: true,
-        format: (v: number | null) =>
-          v == null ? "—" : `${Math.round(Number(v))}/100`,
+        format: (v: number | null) => (v == null ? "—" : `${Math.round(Number(v))}/100`),
       },
     ],
     [summaryA, summaryB]
@@ -170,25 +163,13 @@ export default function CompareView() {
     <div className="space-y-6">
       <div className="flex gap-4 items-end">
         <div className="flex-1">
-          <label className="text-sm text-muted-foreground block mb-1">
-            Neighborhood / ZIP A
-          </label>
-          <LocationSearchCombobox
-            value={zipA}
-            onChange={handleLocationAChange}
-            disabled={false}
-          />
+          <label className="text-sm text-muted-foreground block mb-1">Neighborhood / ZIP A</label>
+          <LocationSearchCombobox value={zipA} onChange={handleLocationAChange} disabled={false} />
         </div>
 
         <div className="flex-1">
-          <label className="text-sm text-muted-foreground block mb-1">
-            Neighborhood / ZIP B
-          </label>
-          <LocationSearchCombobox
-            value={zipB}
-            onChange={handleLocationBChange}
-            disabled={false}
-          />
+          <label className="text-sm text-muted-foreground block mb-1">Neighborhood / ZIP B</label>
+          <LocationSearchCombobox value={zipB} onChange={handleLocationBChange} disabled={false} />
         </div>
 
         <div>
@@ -212,17 +193,13 @@ export default function CompareView() {
               <div className="bg-white border border-blue-100 p-3 rounded-lg">
                 <p className="text-xs text-blue-700 mb-1">Population</p>
                 <p className="text-lg font-bold text-slate-900">
-                  {summaryA.population
-                    ? Number(summaryA.population).toLocaleString()
-                    : "—"}
+                  {summaryA.population ? Number(summaryA.population).toLocaleString() : "—"}
                 </p>
               </div>
               <div className="bg-white border border-blue-100 p-3 rounded-lg">
                 <p className="text-xs text-blue-700 mb-1">Median Income</p>
                 <p className="text-lg font-bold text-slate-900">
-                  {summaryA.income
-                    ? `$${Number(summaryA.income).toLocaleString()}`
-                    : "—"}
+                  {summaryA.income ? `$${Number(summaryA.income).toLocaleString()}` : "—"}
                 </p>
               </div>
             </div>
@@ -239,17 +216,13 @@ export default function CompareView() {
               <div className="bg-white border border-red-100 p-3 rounded-lg">
                 <p className="text-xs text-red-700 mb-1">Population</p>
                 <p className="text-lg font-bold text-slate-900">
-                  {summaryB.population
-                    ? Number(summaryB.population).toLocaleString()
-                    : "—"}
+                  {summaryB.population ? Number(summaryB.population).toLocaleString() : "—"}
                 </p>
               </div>
               <div className="bg-white border border-red-100 p-3 rounded-lg">
                 <p className="text-xs text-red-700 mb-1">Median Income</p>
                 <p className="text-lg font-bold text-slate-900">
-                  {summaryB.income
-                    ? `$${Number(summaryB.income).toLocaleString()}`
-                    : "—"}
+                  {summaryB.income ? `$${Number(summaryB.income).toLocaleString()}` : "—"}
                 </p>
               </div>
             </div>
@@ -277,14 +250,8 @@ export default function CompareView() {
               const bWins = winner === "b";
 
               // show Loading for NSQI specifically
-              const aDisplay =
-                m.key === "nsqi" && nsqiLoadingA
-                  ? "Loading…"
-                  : m.format(m.a as number | null);
-              const bDisplay =
-                m.key === "nsqi" && nsqiLoadingB
-                  ? "Loading…"
-                  : m.format(m.b as number | null);
+              const aDisplay = m.key === "nsqi" && nsqiLoadingA ? "Loading…" : m.format(m.a as number | null);
+              const bDisplay = m.key === "nsqi" && nsqiLoadingB ? "Loading…" : m.format(m.b as number | null);
 
               return (
                 <div
@@ -297,18 +264,10 @@ export default function CompareView() {
 
                   <div
                     className={`flex-1 text-center p-3 rounded-lg mr-2 transition ${
-                      aWins
-                        ? "bg-green-100 border border-green-400"
-                        : "bg-white border border-slate-200"
+                      aWins ? "bg-green-100 border border-green-400" : "bg-white border border-slate-200"
                     }`}
                   >
-                    <p
-                      className={`font-bold text-sm ${
-                        aWins ? "text-green-700" : "text-slate-700"
-                      }`}
-                    >
-                      {aDisplay}
-                    </p>
+                    <p className={`font-bold text-sm ${aWins ? "text-green-700" : "text-slate-700"}`}>{aDisplay}</p>
                     <p className="text-xs text-slate-600 mt-1">{zipA}</p>
                     {aWins && (
                       <p className="text-xs text-green-700 font-semibold mt-1 flex items-center justify-center gap-1">
@@ -319,18 +278,10 @@ export default function CompareView() {
 
                   <div
                     className={`flex-1 text-center p-3 rounded-lg transition ${
-                      bWins
-                        ? "bg-green-100 border border-green-400"
-                        : "bg-white border border-slate-200"
+                      bWins ? "bg-green-100 border border-green-400" : "bg-white border border-slate-200"
                     }`}
                   >
-                    <p
-                      className={`font-bold text-sm ${
-                        bWins ? "text-green-700" : "text-slate-700"
-                      }`}
-                    >
-                      {bDisplay}
-                    </p>
+                    <p className={`font-bold text-sm ${bWins ? "text-green-700" : "text-slate-700"}`}>{bDisplay}</p>
                     <p className="text-xs text-slate-600 mt-1">{zipB}</p>
                     {bWins && (
                       <p className="text-xs text-green-700 font-semibold mt-1 flex items-center justify-center gap-1">
