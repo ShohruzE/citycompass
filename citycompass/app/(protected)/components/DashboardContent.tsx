@@ -52,8 +52,9 @@ const DashboardContent =  () => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Check if token is in URL (from OAuth redirect)
+    // Check if token is in URL (from OAuth redirect)'
     const tokenFromUrl = searchParams.get("token");
+    console.log(tokenFromUrl)
     
     if (tokenFromUrl) {
       // Save token to localStorage

@@ -29,7 +29,7 @@ export default function SignUpPage() {
       // const backendURL = {process.env.BACKEND_URL};
       window.location.href = `${API_BASE}/api/auth/ms-login`;
     } catch {
-      setErrorMessage("failed to initiate Google Sign in");
+      setErrorMessage("failed to initiate Microsoft Sign in");
     }
     setTimeout(() => {
         window.location.href = "/dashboard";
