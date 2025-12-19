@@ -26,11 +26,18 @@ const MISSING_DISTRICTS = [
 
 interface StaticNYCMapProps {
   currentZipCode?: string;
+  compareZipCode?: string;
 }
 
-export default function StaticNYCMap({ currentZipCode }: StaticNYCMapProps) {
+export default function StaticNYCMap({
+  currentZipCode,
+  compareZipCode,
+}: StaticNYCMapProps) {
   const [geoData, setGeoData] = useState<FeatureCollection | null>(null);
   const [zipMarker, setZipMarker] = useState<[number, number] | null>(null);
+  const [compareMarker, setCompareMarker] = useState<[number, number] | null>(
+    null
+  );
 
   useEffect(() => {
     fetch("/nyc_community_districts.geojson")
@@ -53,6 +60,21 @@ export default function StaticNYCMap({ currentZipCode }: StaticNYCMapProps) {
       setZipMarker(null);
     }
   }, [currentZipCode]);
+
+  // Update compare marker when compareZipCode changes
+  useEffect(() => {
+    if (
+      compareZipCode &&
+      zipCoordinates[compareZipCode as keyof typeof zipCoordinates]
+    ) {
+      const coords = zipCoordinates[
+        compareZipCode as keyof typeof zipCoordinates
+      ] as [number, number];
+      setCompareMarker(coords);
+    } else {
+      setCompareMarker(null);
+    }
+  }, [compareZipCode]);
 
   // Base map style
   const getDistrictStyle = (districtID: string | null) => {
@@ -200,6 +222,45 @@ export default function StaticNYCMap({ currentZipCode }: StaticNYCMapProps) {
                 <div style="
                   width: 20px;
                   height: 20px;
+                  background-color: #3b82f6;
+                  border: 3px solid white;
+                  border-radius: 50%;
+                  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+                  animation: pulse 2s infinite;
+                "></div>
+                <style>
+                  @keyframes pulse {
+                    0% { transform: scale(1); opacity: 1; }
+                    50% { transform: scale(1.2); opacity: 0.7; }
+                    100% { transform: scale(1); opacity: 1; }
+                  }
+                </style>
+              `,
+                iconSize: [20, 20],
+                iconAnchor: [10, 10],
+              })
+            }
+          >
+            <Popup>
+              <div style={{ fontFamily: "sans-serif", lineHeight: 1.4 }}>
+                <strong>ZIP A</strong>
+                <p style={{ margin: "4px 0 0 0" }}>
+                  ZIP Code: {currentZipCode}
+                </p>
+              </div>
+            </Popup>
+          </Marker>
+        )}
+        {compareMarker && (
+          <Marker
+            position={compareMarker}
+            icon={
+              new DivIcon({
+                className: "custom-compare-marker",
+                html: `
+                <div style="
+                  width: 20px;
+                  height: 20px;
                   background-color: #ef4444;
                   border: 3px solid white;
                   border-radius: 50%;
@@ -221,9 +282,9 @@ export default function StaticNYCMap({ currentZipCode }: StaticNYCMapProps) {
           >
             <Popup>
               <div style={{ fontFamily: "sans-serif", lineHeight: 1.4 }}>
-                <strong>Your Location</strong>
+                <strong>ZIP B</strong>
                 <p style={{ margin: "4px 0 0 0" }}>
-                  ZIP Code: {currentZipCode}
+                  ZIP Code: {compareZipCode}
                 </p>
               </div>
             </Popup>

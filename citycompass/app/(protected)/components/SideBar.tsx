@@ -103,15 +103,6 @@ export default function SideBar() {
         <Button onClick={logoutUser} className="btn-primary">
           Logout
         </Button>
-        <Button
-          onClick={retrieveUserProfile}
-          className="hover:text-sidebar-primary"
-        >
-          Profile
-        </Button>
-        {/* <Link href="/profile" className="hover:text-sidebar-primary">
-          Profile
-        </Link> */}
       </div>
     </aside>
   );
