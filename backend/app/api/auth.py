@@ -303,6 +303,7 @@ async def google_auth(request: Request, db:db_dependency):
 async def ms_auth(request: Request, db: db_dependency):
     logging.info("token recieved from Microsoft, signing user in")
     try:
+        user = None
         # Get the token without automatic userinfo parsing
         token = await oauth.microsoft.authorize_access_token(request)
 
@@ -322,12 +323,12 @@ async def ms_auth(request: Request, db: db_dependency):
         }
     except OAuthError as error:
         if user is None:
-            logging.error("MS login error occurred" + error)
+            logging.error(f"MS login error occurred: {str(error)}")
             return RedirectResponse(
                 # redirect_url = f"{FRONTEND_URL}/dashboard?token={token}&user={db_user.username}"
                 url=f"{FRONTEND_URL}/sign-in?error=auth_failed"
             )
-        logging.error(user["email"] + "login error occurred" + error)
+        logging.error(f"{user["email"]} login error occurred {str(error)}")
         return RedirectResponse(
                 # redirect_url = f"{FRONTEND_URL}/dashboard?token={token}&user={db_user.username}"
 
@@ -358,9 +359,6 @@ async def ms_auth(request: Request, db: db_dependency):
         logging.error( f"OAuth error: {str(error)}")
         # print(f"OAuth error: {str(error)}")
         return RedirectResponse(f"{FRONTEND_URL}/sign-up?error=server_error")
-    except error:
-        logging.error(error)
-        # print(error)
 
     token = create_access_token(db_user.username, db_user.id, timedelta(minutes=30))
     
@@ -505,16 +503,25 @@ async def email_login(db: db_dependency, user_login_request: UserLoginRequest):
         print(error)
 
     token = create_access_token(db_user.username, db_user.id, timedelta(minutes=30))
-    response = JSONResponse(
-        content={
-            "message": "Login successful",
-            "user": user_login_request.username,
-            "token": token,
-            # Include any other user data you need
-        }
-    )
+    # response = JSONResponse(
+    #     content={
+    #         "message": "Login successful",
+    #         "user": user_login_request.username,
+    #         "token": token,
+    #         # Include any other user data you need
+    #     }
+    # )
 
-    return response
+    # return response
+
+    # token = create_access_token(db_user.username, db_user.id, timedelta(minutes=30))
+    has_survey = db.query(SurveyResponseModel).filter(
+                SurveyResponseModel.user_email == db_user.username
+            ).first() is not None
+    redirect_page = "dashboard" if has_survey else "survey" 
+    redirect_url = f"{FRONTEND_URL}/{redirect_page}?token={token}&user={db_user.username}"
+
+    return RedirectResponse(url=redirect_url)
 
 
 @router.post("/token", response_model=Token)
