@@ -7,7 +7,7 @@ import { useState } from "react";
 export default function SignUpPage() {
   const [errorMessage, setErrorMessage] = useState("");
   const [signUpSuccess, setSignUpSuccess] = useState(false);
-  const API_BASE = (process.env.API_BASE_URL as string) || "http://localhost:8000";
+  const API_BASE = (process.env.NEXT_PUBLIC_API_BASE as string) || "http://localhost:8000";
 
   const handleGoogleSignUp = () => {
     try {
@@ -15,7 +15,7 @@ export default function SignUpPage() {
 
       // const backendURL = {process.env.BACKEND_URL};
       // const backendURL = "http://127.0.0.1:8000";
-      window.location.href = `${API_BASE}/auth/google-login`;
+      window.location.href = `${API_BASE}/api/auth/google-login`;
     } catch {
       setErrorMessage("failed to initiate Google Sign in");
     }
@@ -26,9 +26,9 @@ export default function SignUpPage() {
       setErrorMessage("");
 
       // const backendURL = {process.env.BACKEND_URL};
-      window.location.href = `${API_BASE}/auth/ms-login`;
+      window.location.href = `${API_BASE}/api/auth/ms-login`;
     } catch {
-      setErrorMessage("failed to initiate Google Sign in");
+      setErrorMessage("failed to initiate Microsoft Sign in");
     }
     setTimeout(() => {
       window.location.href = "/survey";
@@ -43,7 +43,8 @@ export default function SignUpPage() {
 
       setErrorMessage("");
 
-      const response = await fetch(`${API_BASE}/auth/register`, {
+
+      const response = await fetch(`${API_BASE}/api/auth/register`, {
         credentials: "include",
         method: "POST",
         headers: {
@@ -64,7 +65,7 @@ export default function SignUpPage() {
       setSignUpSuccess(true);
 
       // Automatically log in the user after successful signup
-      const loginResponse = await fetch(`${API_BASE}/auth/email-auth`, {
+      const loginResponse = await fetch(`${API_BASE}/api/auth/email-auth`, {
         credentials: "include",
         method: "POST",
         headers: {

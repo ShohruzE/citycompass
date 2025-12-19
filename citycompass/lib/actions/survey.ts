@@ -18,7 +18,7 @@ export async function submitSurvey(formData: SurveyFormData) {
   try {
     // Get token from localStorage (this needs to be done client-side)
     // Since this is a server action, we need to pass the token from the client
-    const response = await fetch(`${process.env.API_BASE_URL}/api/survey`, {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE}/api/survey`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

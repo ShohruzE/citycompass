@@ -21,7 +21,7 @@ export default function useNeighborhoodACS(initialZip = "10001") {
 
   useEffect(() => {
     let mounted = true;
-    const API_BASE = (process.env.API_BASE_URL as string) || "http://127.0.0.1:8000";
+    const API_BASE = (process.env.NEXT_PUBLIC_API_BASE as string) || "http://127.0.0.1:8000";
     const url = `${API_BASE}/api/acs/neighborhood?zip=${zip}`;
 
     setLoading(true);

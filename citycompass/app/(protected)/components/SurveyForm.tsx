@@ -17,6 +17,7 @@ import { useLocalStorage } from "@/lib/hooks/useLocalStorage";
 import { ChevronLeft, ChevronRight, Check, AlertCircle } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { useUserLocation } from "@/lib/contexts/UserLocationContext";
+import { useRouter, useSearchParams } from "next/navigation";
 
 const STORAGE_KEY = "citycompass-survey-draft";
 
@@ -37,6 +38,38 @@ export function SurveyForm() {
   const [isLoadingExisting, setIsLoadingExisting] = useState(true);
   const [savedData, setSavedData, clearSavedData] = useLocalStorage<Partial<SurveyFormData>>(STORAGE_KEY, {});
   const { refreshLocation } = useUserLocation();
+
+
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    // Check if token is in URL (from OAuth redirect)'
+    const tokenFromUrl = searchParams.get("token");
+    console.log(tokenFromUrl)
+    
+    if (tokenFromUrl) {
+      // Save token to localStorage
+      localStorage.setItem("token", tokenFromUrl);
+      
+      // Clean up URL by removing token parameter
+      window.history.replaceState({}, '', '/dashboard');
+    }
+    
+    // Check if user is authenticated
+    const token = localStorage.getItem("token");
+    
+    // redirect unauthenticated user
+    if (!token) {
+      // No token found, redirect to sign in
+      router.push("/sign-in");
+    } else {
+      setIsLoading(false);
+    }
+  }, [searchParams, router]);
+        
+
 
   const form = useForm<SurveyFormData>({
     resolver: zodResolver(surveyFormSchema),
@@ -84,7 +117,7 @@ export function SurveyForm() {
           return;
         }
 
-        const API_BASE = process.env.API_BASE_URL || "http://localhost:8000";
+        const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8000";
         const response = await fetch(`${API_BASE}/api/survey/my-surveys`, {
           method: "GET",
           headers: {
@@ -273,7 +306,7 @@ export function SurveyForm() {
         return;
       }
 
-      const API_BASE = process.env.API_BASE_URL || "http://localhost:8000";
+      const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8000";
 
       const response = await fetch(`${API_BASE}/api/survey`, {
         method: "POST",
