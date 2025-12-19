@@ -319,8 +319,24 @@ export function SurveyForm() {
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
+        const err = await response.json().catch(() => null);
+        const detail =
+          typeof err?.detail === "string"
+            ? err.detail
+            : Array.isArray(err?.detail)
+            ? `Validation error: ${err.detail
+                .map((e: any) => {
+                  const loc = Array.isArray(e?.loc) ? e.loc[e.loc.length - 1] : e?.loc;
+                  const msg = e?.msg || e?.message || "Invalid";
+                  return `${loc}: ${msg}`;
+                })
+                .join("; ")}`
+            : typeof err?.message === "string"
+            ? err.message
+            : typeof err?.detail?.detail === "string"
+            ? err.detail.detail
+            : `HTTP error! status: ${response.status}`;
+        throw new Error(detail);
       }
 
       const result = await response.json();

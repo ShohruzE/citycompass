@@ -109,6 +109,7 @@ class SurveyRequest(BaseModel):
 class SurveyResponse(BaseModel):
     """Survey response schema"""
     id: int
+    user_email: str
     name: str
     age: int
     borough: str

@@ -18,18 +18,39 @@ export async function submitSurvey(formData: SurveyFormData) {
   try {
     // Get token from localStorage (this needs to be done client-side)
     // Since this is a server action, we need to pass the token from the client
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE}/api/survey`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      credentials: "include",
-      body: JSON.stringify(data),
-    });
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_API_BASE}/api/survey`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify(data),
+      }
+    );
 
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.detail || "Failed to submit survey");
+      const err = await response.json().catch(() => null);
+      const detail =
+        typeof err?.detail === "string"
+          ? err.detail
+          : Array.isArray(err?.detail)
+          ? `Validation error: ${err.detail
+              .map((e: any) => {
+                const loc = Array.isArray(e?.loc)
+                  ? e.loc[e.loc.length - 1]
+                  : e?.loc;
+                const msg = e?.msg || e?.message || "Invalid";
+                return `${loc}: ${msg}`;
+              })
+              .join("; ")}`
+          : typeof err?.message === "string"
+          ? err.message
+          : typeof err?.detail?.detail === "string"
+          ? err.detail.detail
+          : `HTTP error! status: ${response.status}`;
+      throw new Error(detail);
     }
 
     const result = await response.json();
