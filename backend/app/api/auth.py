@@ -31,24 +31,22 @@ from jose import jwt, JWTError
 
 # Config file reads environment file
 from dotenv import load_dotenv
-import os 
+import os
 
 # from app.logger import log_to_sumo
-# import resend 
+# import resend
 
 from sqlalchemy.orm import Session
 
 # Logs information so developers can see what is happening under the hood
 import logging
+
 # from app.logger import setup_logging
 # setup_logging()  # Call once at startup
 logger = logging.getLogger(__name__)
 
 
-router = APIRouter(
-    prefix='/auth',
-    tags=['auth']
-)
+router = APIRouter(prefix="/auth", tags=["auth"])
 # get all key-value pairs from env file
 load_dotenv()
 
@@ -59,22 +57,24 @@ load_dotenv()
 # retrieve the secret key from env file records
 SECRET_KEY = os.getenv("SECRET_KEY")
 # assert SECRET_KEY, "SECRET_KEY not set"
-ALGORITHM = 'HS256'
+ALGORITHM = "HS256"
 RESET_TOKEN_EXPIRE_MINUTES = 15  # Token expires in 15 minutes
-FRONTEND_URL = os.getenv('FRONTEND_URL') or "http://localhost:3000"   # Your frontend URL
+FRONTEND_URL = os.getenv("FRONTEND_URL") or "http://localhost:3000"  # Your frontend URL
 
 
 router = APIRouter(prefix="/auth", tags=["auth"])
+
 
 def get_db():
     db = SessionLocal()
     try:
         yield db
-    finally: 
+    finally:
         db.close()
 
-bcrypt_context = CryptContext(schemes=['bcrypt'], deprecated='auto')
-oauth2_bearer = OAuth2PasswordBearer(tokenUrl='auth/token')
+
+bcrypt_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+oauth2_bearer = OAuth2PasswordBearer(tokenUrl="auth/token")
 
 # ============================================================================
 # MODELS
@@ -85,6 +85,8 @@ oauth2_bearer = OAuth2PasswordBearer(tokenUrl='auth/token')
     Some of these models are redundant because I used them uniquely in different functions.
     In hindsight they should be reduced
 """
+
+
 class CreateUserRequest(BaseModel):
     username: str
     password: str
@@ -99,19 +101,23 @@ class Token(BaseModel):
     access_token: str
     token_type: str
 
+
 # Create Model for a user
 class UserBase(BaseModel):
     email: str
     password: str
 
+
 class PasswordResetRequest(BaseModel):
     email: str
+
 
 class PasswordResetConfirm(BaseModel):
     token: str
     new_password: str
 
-#  connection to the db 
+
+#  connection to the db
 db_dependency = Annotated[Session, Depends(get_db)]
 
 # reads the client_id and secret from .env file
@@ -140,7 +146,9 @@ oauth.register(
 """
 root will determine if a user session has been saved, if not it shows a link to to the login route
 
-""" 
+"""
+
+
 @router.get("/")
 async def homepage(request: Request):
     print(logger)
@@ -161,11 +169,15 @@ async def homepage(request: Request):
     return: will return a redirect request to google login page
     parameters: takes in user request 
 """
+
+
 @router.get("/google-login")
 async def login(request: Request):
     # log_to_sumo("INFO", "Gmail login endpoint called", {"endpoint": "/"})
     # Logging statement to see when users attempt a google login
-    logging.info('User is attempting to sign in using Google Account, User is redirected')
+    logging.info(
+        "User is attempting to sign in using Google Account, User is redirected"
+    )
     redirect_uri = request.url_for("google_auth")
     return await oauth.google.authorize_redirect(request, redirect_uri)
 
@@ -175,26 +187,30 @@ async def login(request: Request):
     return: will return a redirect request to Microsoft login page
     parameters: takes in user request 
 """
+
+
 @router.get("/ms-login")
-async def ms_login(request: Request):  
+async def ms_login(request: Request):
     # Output log to see when users attempt a MS login
-    logging.info('User is attempting to sign in using Microsoft Account, User is redirected')
-    redirect_uri = request.url_for("ms_auth") 
+    logging.info(
+        "User is attempting to sign in using Microsoft Account, User is redirected"
+    )
+    redirect_uri = request.url_for("ms_auth")
     return await oauth.microsoft.authorize_redirect(request, redirect_uri)
+
 
 """
     output: if a user attempts to signin without a google account, it will create one for them
     return: nothing returned
     parameters: user email and db dependency are required for this function
 """
-def create_google_user(user_email: str, db:db_dependency):
-    logging.info('User is not found in database, creating new user with Gmail info')
-    try: 
-        # using Users model to create the user object 
-        create_user_model = Users(
-            username = user_email,
-            signin_method = "Google"
-        )
+
+
+def create_google_user(user_email: str, db: db_dependency):
+    logging.info("User is not found in database, creating new user with Gmail info")
+    try:
+        # using Users model to create the user object
+        create_user_model = Users(username=user_email, signin_method="Google")
         # Pushing user object to database
         db.add(create_user_model)
         # Committing update to database
@@ -209,13 +225,12 @@ def create_google_user(user_email: str, db:db_dependency):
     return: none
     parameters: user email and database connection
 """
-def create_microsoft_user(user_email: str, db:db_dependency):
-    logging.info('User is not found in database, creating new user with Microsoft info')
-    try: 
-        create_user_model = Users(
-            username = user_email,
-            signin_method = "Microsoft"
-        )
+
+
+def create_microsoft_user(user_email: str, db: db_dependency):
+    logging.info("User is not found in database, creating new user with Microsoft info")
+    try:
+        create_user_model = Users(username=user_email, signin_method="Microsoft")
 
         db.add(create_user_model)
         db.commit()
@@ -223,24 +238,25 @@ def create_microsoft_user(user_email: str, db:db_dependency):
         logging.debug(error)
         # print(error)
 
+
 """
     output: This route receives a token from Google verifying access to app, then redirects user to /dashboard
     return: will return a redirect request to google login page and a JWT token confirming login
     parameters: takes in user request and database dependency 
 """
+
+
 @router.get("/google-auth")
-async def google_auth(request: Request, db:db_dependency):
+async def google_auth(request: Request, db: db_dependency):
     logging.info("token recieved from google, signing user in")
     # if the token is authorized then we will have user infor
     try:
-        token = await oauth.google.authorize_access_token(
-            request
-        ) 
+        token = await oauth.google.authorize_access_token(request)
     except OAuthError as error:
         # logs the error a user recieved when trying to login
         logging.debug(error)
         return HTMLResponse(f"<h1>{error.error}</h1>")
-    
+
     # Token is authroized if no error was caught before
     user = token.get("userinfo")
 
@@ -255,19 +271,27 @@ async def google_auth(request: Request, db:db_dependency):
         # if user is not found, user.email will be null
         db_user = authenticate_sso_user(user.email, db)
         if db_user == False:
-            logging.info(user.email + " not found in db, gmail user is being added to database")
-            create_google_user(user.email,db)
+            logging.info(
+                user.email + " not found in db, gmail user is being added to database"
+            )
+            create_google_user(user.email, db)
             db_user = authenticate_sso_user(user.email, db)
             redirect_page = "survey"  # New user, redirect to survey
         else:
-            logging.info( "user successfully created/found with the following id: " + str(db_user.id))
-            has_survey = db.query(SurveyResponseModel).filter(
-                SurveyResponseModel.user_email == db_user.username
-            ).first() is not None
+            logging.info(
+                "user successfully created/found with the following id: "
+                + str(db_user.id)
+            )
+            has_survey = (
+                db.query(SurveyResponseModel)
+                .filter(SurveyResponseModel.user_email == db_user.username)
+                .first()
+                is not None
+            )
             redirect_page = "dashboard" if has_survey else "survey"
     except HTTPException:
         logging.error(error)
-    
+
     if db_user:
         logging.info(db_user)
     else:
@@ -275,22 +299,24 @@ async def google_auth(request: Request, db:db_dependency):
 
     # token = create_access_token(user.email, db_user.id, timedelta(minutes=30))
     # response = RedirectResponse(url="http://localhost:3000/dashboard")
-    
+
     # response = JSONResponse(content={
     #     "message": "Login successful",
     #     "user": db_user.username,
     #     "token":token
     #     # Include any other user data you need
     # })
-    
+
     # return response
     # token = create_access_token(user.email, db_user.id, timedelta(minutes=30))
     token = create_access_token(db_user.username, db_user.id, timedelta(minutes=30))
-    
-    redirect_url = f"{FRONTEND_URL}/{redirect_page}?token={token}&user={db_user.username}"
+
+    redirect_url = (
+        f"{FRONTEND_URL}/{redirect_page}?token={token}&user={db_user.username}"
+    )
 
     logging.info(redirect_url)
-    
+
     return RedirectResponse(url=redirect_url)
 
 
@@ -299,6 +325,8 @@ async def google_auth(request: Request, db:db_dependency):
     return: will return a redirect request to Microsoft login page and a JWT token confirming login
     parameters: takes in user request and database dependency 
 """
+
+
 @router.get("/ms-auth")
 async def ms_auth(request: Request, db: db_dependency):
     logging.info("token recieved from Microsoft, signing user in")
@@ -328,50 +356,60 @@ async def ms_auth(request: Request, db: db_dependency):
                 # redirect_url = f"{FRONTEND_URL}/dashboard?token={token}&user={db_user.username}"
                 url=f"{FRONTEND_URL}/sign-in?error=auth_failed"
             )
-        logging.error(f"{user["email"]} login error occurred {str(error)}")
+        logging.error(f"{user['email']} login error occurred {str(error)}")
         return RedirectResponse(
-                # redirect_url = f"{FRONTEND_URL}/dashboard?token={token}&user={db_user.username}"
-
-                url=f"{FRONTEND_URL}/sign-in?error=auth_failed"
-            )
+            # redirect_url = f"{FRONTEND_URL}/dashboard?token={token}&user={db_user.username}"
+            url=f"{FRONTEND_URL}/sign-in?error=auth_failed"
+        )
     except Exception as error:
         logging.error(user["email"] + "login error occurred" + error)
-        return RedirectResponse(
-                url=f"{FRONTEND_URL}/sign-in?error=ms_server_error"
-            )
+        return RedirectResponse(url=f"{FRONTEND_URL}/sign-in?error=ms_server_error")
 
     redirect_page = "dashboard"
     try:
         db_user = authenticate_sso_user(user["email"], db)
         # print("db_user: ", db_user)
         if db_user == False:
-            logging.info(user["email"] + " not found in db, microsoft user is being added to database")
-            create_microsoft_user(user["email"],db)
+            logging.info(
+                user["email"]
+                + " not found in db, microsoft user is being added to database"
+            )
+            create_microsoft_user(user["email"], db)
             db_user = authenticate_sso_user(user["email"], db)
             redirect_page = "survey"  # New user, redirect to survey
         else:
-            logging.info( "user successfully created/found with the following id: " + str(db_user.id))
-            has_survey = db.query(SurveyResponseModel).filter(
-                SurveyResponseModel.user_email == db_user.username
-            ).first() is not None
-            redirect_page = "dashboard" if has_survey else "survey" 
+            logging.info(
+                "user successfully created/found with the following id: "
+                + str(db_user.id)
+            )
+            has_survey = (
+                db.query(SurveyResponseModel)
+                .filter(SurveyResponseModel.user_email == db_user.username)
+                .first()
+                is not None
+            )
+            redirect_page = "dashboard" if has_survey else "survey"
     except Exception as error:
-        logging.error( f"OAuth error: {str(error)}")
+        logging.error(f"OAuth error: {str(error)}")
         # print(f"OAuth error: {str(error)}")
         return RedirectResponse(f"{FRONTEND_URL}/sign-up?error=server_error")
 
     token = create_access_token(db_user.username, db_user.id, timedelta(minutes=30))
-    
-    redirect_url = f"{FRONTEND_URL}/{redirect_page}?token={token}&user={db_user.username}"
+
+    redirect_url = (
+        f"{FRONTEND_URL}/{redirect_page}?token={token}&user={db_user.username}"
+    )
 
     return RedirectResponse(url=redirect_url)
- 
+
 
 """
     output: removes user information and redirects back to the root
     return: message that says logout was successfull
     parameters: request and response
 """
+
+
 @router.get("/logout")
 async def logout(request: Request, response: Response):
     logging.info("user sign out initiated")
@@ -389,15 +427,17 @@ async def logout(request: Request, response: Response):
         domain="localhost",  # Match your cookie domain
     )
 
-
     return {"message": "Logged out successfully"}
     # return RedirectResponse(url="http://localhost:3000")
+
 
 """
     output: tests if password meets certain requirements
     return: returns false or encrypted  password with bcrypt
     parameters: string that represents user password
 """
+
+
 def is_valid_password(password):
     if len(password) < 8:
         return False
@@ -413,6 +453,8 @@ def is_valid_password(password):
     return: returns username or false
     parameters: string that represents user password
 """
+
+
 def is_valid_username(username):
     if len(username) < 8:
         return False
@@ -424,20 +466,22 @@ def is_valid_username(username):
     return: none
     parameters: db dependency and a user object
 """
+
+
 @router.post("/register", status_code=status.HTTP_201_CREATED)
-async def create_user(db:db_dependency, create_user_request: CreateUserRequest):
+async def create_user(db: db_dependency, create_user_request: CreateUserRequest):
     logging.info("Creating new user")
-    try: 
+    try:
         valid_password = create_user_request.password
         valid_password = is_valid_password(valid_password)
         valid_username = is_valid_username(create_user_request.username)
-        
-        if (valid_password == False):
+
+        if valid_password == False:
             logging.warning("invalid password")
             raise HTTPException(status_code=400, detail="invalid password")
         logging.info("valid password")
 
-        if (valid_username == False):
+        if valid_username == False:
             logging.warning("invalid username")
             raise HTTPException(status_code=400, detail="invalid username")
         logging.info("Valid username")
@@ -445,9 +489,7 @@ async def create_user(db:db_dependency, create_user_request: CreateUserRequest):
         # db_new_user = models.Users(email = create_user_request.username, password = valid_password)
         # bcrypt_context.hash(create_user_request.password)
         create_user_model = Users(
-            username = valid_username,
-            password = valid_password,
-            signin_method='email'
+            username=valid_username, password=valid_password, signin_method="email"
         )
 
         logging.info("creating user in DB")
@@ -465,19 +507,25 @@ async def create_user(db:db_dependency, create_user_request: CreateUserRequest):
     #     raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
     #                             detail='User Email already in use.')
 
+
 """
     output: creates a JWT token using the user's id and username(email)
     return: JWT Token
     parameters: username and user id
 """
+
+
 def create_jwt_token(username, id):
     token = create_access_token(username, id, timedelta(minutes=30))
     return token
+
 
 """
     output: function to test if cors is working by calling a simple endpoint
     return: response with string "CORS works" if frontend can call the backend
 """
+
+
 @router.post("/test")
 async def test():
     return {"message": "CORS works!"}
@@ -515,11 +563,16 @@ async def email_login(db: db_dependency, user_login_request: UserLoginRequest):
     # return response
 
     # token = create_access_token(db_user.username, db_user.id, timedelta(minutes=30))
-    has_survey = db.query(SurveyResponseModel).filter(
-                SurveyResponseModel.user_email == db_user.username
-            ).first() is not None
-    redirect_page = "dashboard" if has_survey else "survey" 
-    redirect_url = f"{FRONTEND_URL}/{redirect_page}?token={token}&user={db_user.username}"
+    has_survey = (
+        db.query(SurveyResponseModel)
+        .filter(SurveyResponseModel.user_email == db_user.username)
+        .first()
+        is not None
+    )
+    redirect_page = "dashboard" if has_survey else "survey"
+    redirect_url = (
+        f"{FRONTEND_URL}/{redirect_page}?token={token}&user={db_user.username}"
+    )
 
     return RedirectResponse(url=redirect_url)
 
@@ -658,13 +711,15 @@ async def authenticate_token(token: Annotated[str, Depends(oauth2_bearer)]):
             )
         return {"username": username, "id": user_id}
     except JWTError:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
-            detail='Could not validate user.')
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Could not validate user."
+        )
 
 
 # ============================================================================
 # HELPER FUNCTIONS for Password Reset function
 # ============================================================================
+
 
 def create_reset_token(email: str) -> str:
     """Create a password reset token that expires in 15 minutes"""
@@ -672,10 +727,11 @@ def create_reset_token(email: str) -> str:
     to_encode = {
         "sub": email,
         "exp": expire,
-        "type": "password_reset"  # Distinguish from regular JWT tokens
+        "type": "password_reset",  # Distinguish from regular JWT tokens
     }
     token = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return token
+
 
 def verify_reset_token(token: str) -> str:
     """Verify the reset token and return the email"""
@@ -683,30 +739,29 @@ def verify_reset_token(token: str) -> str:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         email: str = payload.get("sub")
         token_type: str = payload.get("type")
-        
+
         if email is None or token_type != "password_reset":
             raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Invalid reset token"
+                status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid reset token"
             )
-        
+
         return email
-    
+
     except jwt.ExpiredSignatureError:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Reset token has expired. Please request a new one."
+            detail="Reset token has expired. Please request a new one.",
         )
     except jwt.JWTError:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid reset token"
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid reset token"
         )
+
 
 def send_reset_email(email: str, token: str):
     """Send password reset email using Resend"""
     reset_url = f"{FRONTEND_URL}/reset-password?token={token}"
-    
+
     try:
         params = {
             "from": "noreply@yourdomain.com",  # Your verified domain
@@ -752,26 +807,28 @@ def send_reset_email(email: str, token: str):
                     </div>
                 </body>
             </html>
-            """
+            """,
         }
-        
+
         # resend.Emails.send(params)
-        
+
     except Exception as e:
         print(f"Error sending email: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to send reset email"
+            detail="Failed to send reset email",
         )
+
 
 # ============================================================================
 # ENDPOINTS
 # ============================================================================
 
+
 @router.post("/request-password-reset", status_code=status.HTTP_200_OK)
 async def request_password_reset(
     request: PasswordResetRequest,
-    db: Annotated[Session, Depends(get_db)]  # Your db dependency
+    db: Annotated[Session, Depends(get_db)],  # Your db dependency
 ):
     """
     Request a password reset email.
@@ -781,7 +838,7 @@ async def request_password_reset(
         logging.info("user requested password reset")
         # 1. Check if user exists
         user = db.query(Users).filter(Users.username == request.email).first()
-        
+
         if not user:
             # Don't reveal if user exists or not (security best practice)
             return {
@@ -793,63 +850,63 @@ async def request_password_reset(
         if user.signin_method is not None and user.signin_method != "email":
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"This account uses {user.signin_method} sign-in. Please use that method to log in."
+                detail=f"This account uses {user.signin_method} sign-in. Please use that method to log in.",
             )
         logging.info("user sign in method is email")
         # 3. Create reset token
         reset_token = create_reset_token(user.username)
-        
+
         # 4. Send email
         send_reset_email(user.username, reset_token)
-        
+
         return {
             "message": "If an account exists with this email, you will receive a password reset link."
         }
     except Exception as e:
-            print(f"Error sending email: {e}")
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Failed to send reset email"
-            )
+        print(f"Error sending email: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to send reset email",
+        )
 
 
 @router.post("/reset-password", status_code=status.HTTP_200_OK)
 async def reset_password(
     request: PasswordResetConfirm,
-    db: Annotated[Session, Depends(get_db)]  # Your db dependency
+    db: Annotated[Session, Depends(get_db)],  # Your db dependency
 ):
     """
     Reset password using the token from email.
     """
-    
+
     # 1. Verify token and get email
     email = verify_reset_token(request.token)
-    
+
     # 2. Get user
     user = db.query(Users).filter(Users.email == email).first()
-    
+
     if not user:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
         )
-    
+
     # 3. Check social sign-in again (in case it changed)
     if user.social_sign_in is not None and user.social_sign_in != "":
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"This account uses {user.social_sign_in} sign-in."
+            detail=f"This account uses {user.social_sign_in} sign-in.",
         )
-    
+
     # 4. Hash new password
     from passlib.context import CryptContext
-    bcrypt_context = CryptContext(schemes=['bcrypt'], deprecated='auto')
+
+    bcrypt_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
     hashed_password = bcrypt_context.hash(request.new_password)
-    
+
     # 5. Update password
     user.password = hashed_password
     db.commit()
-    
+
     return {
         "message": "Password successfully reset. You can now log in with your new password."
     }
@@ -861,15 +918,9 @@ async def verify_reset_token_endpoint(token: str):
     Optional: Verify if a reset token is valid before showing the reset form.
     Frontend can call this when the reset page loads.
     """
-    
+
     try:
         email = verify_reset_token(token)
-        return {
-            "valid": True,
-            "email": email
-        }
+        return {"valid": True, "email": email}
     except HTTPException:
-        return {
-            "valid": False,
-            "message": "Invalid or expired token"
-        }
+        return {"valid": False, "message": "Invalid or expired token"}

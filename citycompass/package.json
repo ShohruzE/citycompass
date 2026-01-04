@@ -24,7 +24,7 @@
     "cmdk": "^1.1.1",
     "leaflet": "^1.9.4",
     "lucide-react": "^0.544.0",
-    "next": "16.0.8",
+    "next": "^16.1.1",
     "react": "19.2.1",
     "react-dom": "19.2.1",
     "react-hook-form": "^7.65.0",
