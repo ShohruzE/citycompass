@@ -1,11 +1,10 @@
 "use client"
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import ResetPassword from '@/app/(public)/reset-password/page';
 
 const ResetPasswordContent =  () => {
-
-const router = useRouter();
+  const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8000";
+  const router = useRouter();
   const searchParams = useSearchParams();
   const token = searchParams.get('token');
   
@@ -27,7 +26,7 @@ const router = useRouter();
   const verifyToken = async () => {
     try {
       const response = await fetch(
-        `http://127.0.0.1:8000/auth/verify-reset-token?token=${token}`,
+        `${API_BASE}/api/auth/verify-reset-token?token=${token}`,
         { method: 'POST' }
       );
       const data = await response.json();
@@ -62,7 +61,7 @@ const router = useRouter();
     setMessage('');
 
     try {
-      const response = await fetch('http://127.0.0.1:8000/auth/reset-password', {
+      const response = await fetch(`${API_BASE}/api/auth/reset-password`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

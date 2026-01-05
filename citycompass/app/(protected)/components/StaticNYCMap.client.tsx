@@ -150,8 +150,9 @@ export default function StaticNYCMap({
 
         layer.bindPopup("Loading prediction...").openPopup(e.latlng);
 
+        const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8000";
         fetch(
-          `http://localhost:8000/api/ml/predict?community_district=${districtID}`
+          `${API_BASE}/api/ml/predict?community_district=${districtID}`
         )
           .then((res) => {
             if (!res.ok) {

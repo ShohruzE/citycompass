@@ -9,6 +9,7 @@ export default function ForgotPassword() {
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const router = useRouter();
+  const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8000";
 
   const handleSubmit = async (e: { preventDefault: () => void; }) => {
     e.preventDefault();
@@ -17,7 +18,7 @@ export default function ForgotPassword() {
     setMessage('');
 
     try {
-      const response = await fetch('http://127.0.0.1:8000/auth/request-password-reset', {
+      const response = await fetch(`${API_BASE}/api/auth/request-password-reset`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -89,10 +90,10 @@ export default function ForgotPassword() {
           <div className="text-center">
             <button
               type="button"
-              onClick={() => router.push('/login')}
+              onClick={() => router.push('/sign-in')}
               className="text-sm text-indigo-600 hover:text-indigo-500"
             >
-              Back to login
+              Back to sign in
             </button>
           </div>
         </form>

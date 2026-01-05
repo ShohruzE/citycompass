@@ -5,16 +5,6 @@ import Link from "next/link";
 import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 
-async function testing() {
-  const API_BASE = (process.env.NEXT_PUBLIC_API_BASE as string) || "http://localhost:8000";
-  const response = await fetch(`${API_BASE}/api/auth/test`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    credentials: "include",
-  });
-  console.log(await response.json());
-}
-
 const SigninContent = () => {
   const searchParams = useSearchParams();
   const error = searchParams.get("error");
@@ -23,8 +13,6 @@ const SigninContent = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const API_BASE = (process.env.NEXT_PUBLIC_API_BASE as string) || "http://localhost:8000";
-
-  testing();
 
   useEffect(() => {
     if (error === "auth_failed") {
