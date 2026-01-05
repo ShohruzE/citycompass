@@ -25,42 +25,7 @@ export default function SideBar() {
 
   function logoutUser() {
     localStorage.removeItem("token");
-    window.location.href = "http://localhost:3000/"; // or use Next.js router
-  }
-
-  async function retrieveUserProfile() {
-    try {
-      //
-
-      // Retrieve token for API calls
-      const token = localStorage.getItem("token")?.trim();
-      console.log("Token length:", token?.length);
-      console.log("First char:", token?.[0]);
-      console.log("Last char:", token?.[token.length - 1]);
-      console.log(token);
-      const backendURL = "http://127.0.0.1:8000/user";
-
-      const response = await fetch(backendURL, {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      });
-      console.log(response);
-      if (response.ok) {
-        const userData = await response.json();
-        console.log("User data:", userData);
-        return userData;
-        // Clear any client-side state/storage
-        // Redirect or update UI
-        // window.location.href = 'http://localhost:3000/'; // or use Next.js router
-      } else {
-        console.error("Logout failed:", response.status);
-      }
-    } catch (error) {
-      console.error("Logout error:", error);
-    }
+    window.location.href = "/";
   }
 
   return (

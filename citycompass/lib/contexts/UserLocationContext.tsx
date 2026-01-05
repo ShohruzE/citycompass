@@ -40,7 +40,7 @@ export function UserLocationProvider({ children }: { children: React.ReactNode }
       setLoading(true);
       setError(null);
 
-      const API_BASE = (process.env.NEXT_PUBLIC_API_BASE as string) || "http://127.0.0.1:8000";
+      const API_BASE = (process.env.NEXT_PUBLIC_API_BASE as string) || "http://localhost:8000";
       const token = localStorage.getItem("token");
 
       if (!token) {
@@ -140,15 +140,15 @@ export function UserLocationProvider({ children }: { children: React.ReactNode }
         setLoading(true);
         setError(null);
 
-        const API_BASE = (process.env.NEXT_PUBLIC_API_BASE as string) || "http://127.0.0.1:8000";
+        const API_BASE = (process.env.NEXT_PUBLIC_API_BASE as string) || "http://localhost:8000";
         const token = localStorage.getItem("token");
 
         if (!token) {
           throw new Error("No authentication token found");
         }
 
-        // Call the backend to update user's location via a survey submission
-        const response = await fetch(`${API_BASE}/api/survey/submit`, {
+        // Call the dedicated location update endpoint
+        const response = await fetch(`${API_BASE}/api/survey/update-location`, {
           method: "POST",
           headers: {
             Authorization: `Bearer ${token}`,
@@ -159,14 +159,6 @@ export function UserLocationProvider({ children }: { children: React.ReactNode }
             zip_code: zipCode,
             borough: borough || null,
             neighborhood: neighborhood || null,
-            // Use default/empty values for other required survey fields
-            affordability: 5,
-            commute: 5,
-            safety: 5,
-            food_access: 5,
-            school_quality: 5,
-            noise: 5,
-            parks: 5,
           }),
         });
 
@@ -174,15 +166,18 @@ export function UserLocationProvider({ children }: { children: React.ReactNode }
           if (response.status === 401) {
             throw new Error("Authentication failed. Please log in again.");
           }
-          throw new Error(`Failed to update location: ${response.statusText}`);
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.detail || `Failed to update location: ${response.statusText}`);
         }
 
-        // Update local state
+        const data = await response.json();
+
+        // Update local state with response data
         const locationData: UserLocation = {
-          zipCode,
-          borough: borough || null,
-          neighborhood: neighborhood || null,
-          createdAt: new Date().toISOString(),
+          zipCode: data.zip_code,
+          borough: data.borough || null,
+          neighborhood: data.neighborhood || null,
+          createdAt: data.created_at || new Date().toISOString(),
         };
 
         setLocation(locationData);

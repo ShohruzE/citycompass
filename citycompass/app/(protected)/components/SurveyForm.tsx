@@ -45,16 +45,15 @@ export function SurveyForm() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Check if token is in URL (from OAuth redirect)'
+    // Check if token is in URL (from OAuth redirect)
     const tokenFromUrl = searchParams.get("token");
-    console.log(tokenFromUrl)
     
     if (tokenFromUrl) {
       // Save token to localStorage
       localStorage.setItem("token", tokenFromUrl);
       
       // Clean up URL by removing token parameter
-      window.history.replaceState({}, '', '/dashboard');
+      window.history.replaceState({}, '', '/survey');
     }
     
     // Check if user is authenticated
