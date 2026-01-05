@@ -1,29 +1,24 @@
-# The following libraries will allow FastAPI to run, create classes and create exceptions
+# FastAPI core imports
 import json
 import os
 from fastapi import FastAPI, Depends, HTTPException, Request
 from starlette import status
-from pydantic import BaseModel
 from typing import Annotated
 
-# Library used to enable CORS middleware
+# CORS middleware
 from fastapi.middleware.cors import CORSMiddleware
 
-# from sqlalchemy import Engine
+# Database
 from sqlalchemy.orm import Session
-
-# The three libraries below are used to create a model of the database, create the connection to the database
-# and import the SQL alchemy DB
 from app.models.models import Base
 from app.core.db import engine, get_db
+
+# API routers
 from app.api import auth, ml, acs, survey, agent
 
-# All libraries below are used to enable OAuth
+# Session middleware for OAuth
 from starlette.middleware.sessions import SessionMiddleware
-from starlette.responses import HTMLResponse, RedirectResponse
-
-#  Authlib allows us to use OAuth to authenticate users using popular services like MS and Google
-from authlib.integrations.starlette_client import OAuth, OAuthError
+from starlette.responses import HTMLResponse
 
 
 import logging
@@ -77,24 +72,14 @@ app.add_middleware(
 )
 
 
-app.include_router(auth.router)
-# #document_further
-# models.Base.metadata.create_all(bind=engine)
+# Create database tables
 Base.metadata.create_all(bind=engine)
 
-
-# Create Model for a user
-class UserBase(BaseModel):
-    email: str
-    username: str
-    password: str
-
-
-# document_further
+# Dependencies
 db_dependency = Annotated[Session, Depends(get_db)]
 user_dependency = Annotated[dict, Depends(auth.get_current_user)]
 
-
+# Register routers (only with /api prefix)
 app.include_router(auth.router, prefix="/api")
 app.include_router(ml.router, prefix="/api")
 app.include_router(acs.router, prefix="/api")

@@ -1,9 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
-from typing import Annotated
-from pydantic import ValidationError
+from typing import Annotated, Optional
+from pydantic import BaseModel, ValidationError, Field, field_validator
 from fastapi.encoders import jsonable_encoder
+import re
 
 from app.core.db import get_db
 from app.models.models import SurveyResponse as SurveyResponseModel
@@ -11,6 +12,22 @@ from app.schemas.survey import SurveyRequest, SurveyResponse, ErrorResponse
 from app.api.auth import get_current_user
 
 import logging
+
+
+# Pydantic model for location update request
+class LocationUpdateRequest(BaseModel):
+    """Request model for updating user's location"""
+    zip_code: str = Field(..., description="5-digit NYC zip code")
+    borough: Optional[str] = Field(None, description="NYC Borough")
+    neighborhood: Optional[str] = Field(None, description="Neighborhood name")
+
+    @field_validator('zip_code')
+    @classmethod
+    def validate_zip_code(cls, v: str) -> str:
+        """Validate zip code is 5 digits"""
+        if not re.match(r'^\d{5}$', v):
+            raise ValueError('Zip code must be exactly 5 digits')
+        return v
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -333,6 +350,142 @@ async def get_current_location(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to retrieve location. Please try again later.",
+        )
+
+
+@router.post(
+    "/update-location",
+    responses={
+        200: {"description": "Location updated successfully"},
+        401: {"model": ErrorResponse, "description": "Not authenticated"},
+        400: {"model": ErrorResponse, "description": "Validation error"},
+        500: {"model": ErrorResponse, "description": "Internal server error"},
+    },
+)
+async def update_location(
+    location_data: LocationUpdateRequest,
+    db: db_dependency,
+    current_user: user_dependency,
+):
+    """
+    Update the user's current location without requiring a full survey submission.
+
+    **Authentication Required**: User must be logged in.
+
+    **Request Body**: 
+    - zip_code (required): 5-digit NYC zip code
+    - borough (optional): NYC Borough name
+    - neighborhood (optional): Neighborhood name
+
+    **Returns**: Updated location data.
+
+    This endpoint updates the user's latest survey record with the new location,
+    or creates a minimal location record if no survey exists.
+    """
+
+    try:
+        user_email = current_user.get("username") or current_user.get("email")
+        if not user_email:
+            logger.error(f"User session missing email: {current_user}")
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="User email not found in session. Please log in again.",
+            )
+
+        logger.info(f"Updating location for user: {user_email}, ZIP: {location_data.zip_code}")
+
+        # Find user's latest survey to update
+        latest_survey = (
+            db.query(SurveyResponseModel)
+            .filter(SurveyResponseModel.user_email == user_email)
+            .order_by(SurveyResponseModel.created_at.desc())
+            .first()
+        )
+
+        if latest_survey:
+            # Update existing survey's location fields
+            latest_survey.zip_code = location_data.zip_code
+            if location_data.borough:
+                latest_survey.borough = location_data.borough
+            if location_data.neighborhood:
+                latest_survey.neighborhood = location_data.neighborhood
+            db.commit()
+            db.refresh(latest_survey)
+
+            logger.info(f"Updated location for user: {user_email}")
+
+            return {
+                "zip_code": latest_survey.zip_code,
+                "borough": latest_survey.borough,
+                "neighborhood": latest_survey.neighborhood,
+                "created_at": latest_survey.created_at,
+                "message": "Location updated successfully",
+            }
+        else:
+            # No existing survey - create a minimal location record
+            # Using default/placeholder values for required fields
+            new_survey = SurveyResponseModel(
+                user_email=user_email,
+                email=user_email,
+                name="Location Only",
+                age=18,
+                borough=location_data.borough or "Manhattan",
+                neighborhood=location_data.neighborhood or "Unknown",
+                zip_code=location_data.zip_code,
+                residency_duration="< 6 months",
+                safety_rating=3,
+                time_of_day_safety="Both",
+                crime_concern_level="Not concerned",
+                police_presence_rating=3,
+                safety_testimonial="",
+                street_cleanliness_rating=3,
+                trash_management_rating=3,
+                parks_quality_rating=3,
+                noise_level="Moderate",
+                environmental_testimonial="",
+                grocery_store_access="Walk 5-15min",
+                restaurant_variety_rating=3,
+                food_affordability_rating=3,
+                farmers_market_access=False,
+                food_access_testimonial="",
+                rent_affordability="Fair",
+                cost_of_living="Moderate",
+                value_for_money_rating=3,
+                financial_testimonial="",
+                overall_rating=3,
+                would_recommend=True,
+                biggest_strength="Location set by user",
+                area_for_improvement="Survey not completed",
+                additional_comments="",
+            )
+            db.add(new_survey)
+            db.commit()
+            db.refresh(new_survey)
+
+            logger.info(f"Created location record for user: {user_email}")
+
+            return {
+                "zip_code": new_survey.zip_code,
+                "borough": new_survey.borough,
+                "neighborhood": new_survey.neighborhood,
+                "created_at": new_survey.created_at,
+                "message": "Location saved successfully",
+            }
+
+    except SQLAlchemyError as e:
+        logger.error(f"Database error while updating location: {str(e)}")
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to update location. Please try again later.",
+        )
+
+    except Exception as e:
+        logger.error(f"Unexpected error while updating location: {str(e)}")
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="An unexpected error occurred. Please try again later.",
         )
 
 
