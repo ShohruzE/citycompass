@@ -68,6 +68,7 @@ class Token(BaseModel):
     token_type: str
 
 
+
 class PasswordResetRequest(BaseModel):
     email: str
 
@@ -472,6 +473,7 @@ def create_reset_token(email: str) -> str:
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
 
+
 def verify_reset_token(token: str) -> str:
     """Verify the reset token and return the email"""
     try:
@@ -520,6 +522,7 @@ def send_reset_email(email: str, token: str):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to send reset email",
         )
+
 
 
 @router.post("/request-password-reset", status_code=status.HTTP_200_OK)

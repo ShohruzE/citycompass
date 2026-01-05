@@ -14,7 +14,7 @@ from app.models.models import Base
 from app.core.db import engine, get_db
 
 # API routers
-from app.api import auth, ml, acs, survey
+from app.api import auth, ml, acs, survey, agent
 
 # Session middleware for OAuth
 from starlette.middleware.sessions import SessionMiddleware
@@ -60,7 +60,6 @@ origins = [
     "http://172.20.208.1:3000",
     "http://172.20.208.1",  # Add all potential frontend URLs
     "https://citycompass.vercel.app",
-    "https://citycompass-git-feat-login-signup-shohruzes-projects.vercel.app",
 ]
 
 app.add_middleware(
@@ -84,6 +83,7 @@ user_dependency = Annotated[dict, Depends(auth.get_current_user)]
 app.include_router(auth.router, prefix="/api")
 app.include_router(ml.router, prefix="/api")
 app.include_router(acs.router, prefix="/api")
+app.include_router(agent.router, prefix="/api")
 
 
 # root will determine if a user session has been saved, if not it shows a link to to the login route
