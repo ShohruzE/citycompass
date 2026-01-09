@@ -4,18 +4,16 @@ import * as React from "react";
 import InsightCard from "../components/InsightCard";
 import StaticNYCMap from "../components/StaticNYCMap";
 import { ScoreCard } from "../components/ScoreCard";
+import { ChatPanel } from "../components/chat";
 import { Leaf, ShieldCheck, Database, MapPin, Users, DollarSign, Calendar, AlertCircle } from "lucide-react";
 import useNeighborhoodACS from "../hooks/useNeighborhoodACS";
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect } from "react";
 import { useUserLocation } from "@/lib/contexts/UserLocationContext";
 import { LocationSearchCombobox } from "../components/LocationSearchCombobox";
 import { LocationBadge } from "../components/LocationBadge";
 import { getDisplayNameForZip, type Location } from "@/lib/data/nyc-locations";
 import { inferBoroughFromZip } from "@/lib/actions/location";
 import { useRouter, useSearchParams } from "next/navigation";
-
-import { connection } from 'next/server'
-// import DashboardContent from "../components/DashboardContent";
 
 const DashboardContent =  () => {
     
@@ -154,10 +152,15 @@ const DashboardContent =  () => {
   // Get display name for current viewing location
   const viewingLocationName = viewingLocation?.label || getDisplayNameForZip(viewingZip);
 
+  // Handle navigation from chat to a specific ZIP
+  const handleNavigateToZip = (zip: string) => {
+    setViewingZip(zip);
+    setViewingLocation(null);
+  };
+
     return(
-
-   
-
+    <>
+    {/* Main Dashboard Content */}
     <div className="space-y-6">
       {/* Header */}
       <header className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -298,7 +301,10 @@ const DashboardContent =  () => {
         </div>
       </div>
     </div>
-    
+
+    {/* AI Chat Panel - Floating button that expands to sidebar */}
+    <ChatPanel onNavigateToZip={handleNavigateToZip} />
+    </>
 
     )
 
