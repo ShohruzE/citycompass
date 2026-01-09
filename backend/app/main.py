@@ -1,32 +1,28 @@
-# The following libraries will allow FastAPI to run, create classes and create exceptions
+# FastAPI core imports
 import json
 import os
 from fastapi import FastAPI, Depends, HTTPException, Request
 from starlette import status
-from pydantic import BaseModel
 from typing import Annotated
 
-# Library used to enable CORS middleware
+# CORS middleware
 from fastapi.middleware.cors import CORSMiddleware
 
-# from sqlalchemy import Engine
+# Database
 from sqlalchemy.orm import Session
-
-# The three libraries below are used to create a model of the database, create the connection to the database
-# and import the SQL alchemy DB
 from app.models.models import Base
 from app.core.db import engine, get_db
-from app.api import auth, ml, acs, survey
 
-# All libraries below are used to enable OAuth
+# API routers
+from app.api import auth, ml, acs, survey, agent
+
+# Session middleware for OAuth
 from starlette.middleware.sessions import SessionMiddleware
-from starlette.responses import HTMLResponse, RedirectResponse
-#  Authlib allows us to use OAuth to authenticate users using popular services like MS and Google
-from authlib.integrations.starlette_client import OAuth, OAuthError
+from starlette.responses import HTMLResponse
 
 
 import logging
-from app.logger import setup_logging 
+from app.logger import setup_logging
 
 setup_logging()
 
@@ -64,7 +60,6 @@ origins = [
     "http://172.20.208.1:3000",
     "http://172.20.208.1",  # Add all potential frontend URLs
     "https://citycompass.vercel.app",
-    'https://citycompass-git-feat-login-signup-shohruzes-projects.vercel.app'
 ]
 
 app.add_middleware(
@@ -77,29 +72,18 @@ app.add_middleware(
 )
 
 
-
-
-app.include_router(auth.router)
-# #document_further
-# models.Base.metadata.create_all(bind=engine)
+# Create database tables
 Base.metadata.create_all(bind=engine)
 
-
-# Create Model for a user
-class UserBase(BaseModel):
-    email: str
-    username: str
-    password: str
-
-
-# document_further
+# Dependencies
 db_dependency = Annotated[Session, Depends(get_db)]
 user_dependency = Annotated[dict, Depends(auth.get_current_user)]
 
-
+# Register routers (only with /api prefix)
 app.include_router(auth.router, prefix="/api")
 app.include_router(ml.router, prefix="/api")
 app.include_router(acs.router, prefix="/api")
+app.include_router(agent.router, prefix="/api")
 
 
 # root will determine if a user session has been saved, if not it shows a link to to the login route

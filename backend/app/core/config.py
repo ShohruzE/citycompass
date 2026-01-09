@@ -12,6 +12,10 @@ class Settings(BaseSettings):
     MICROSOFT_CLIENT_SECRET: str
     ACS_API_KEY: str
 
+    # Agent configuration
+    OPENAI_API_KEY: str = ""
+    AGENT_MODEL: str = "openai:gpt-5-nano"
+
     # document further
     SECRET_KEY: str = secrets.token_hex(32)
     # To read env variables from .env file

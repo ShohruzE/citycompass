@@ -58,7 +58,7 @@ export default function CompareView() {
           return;
         }
 
-        const API_BASE = "http://localhost:8000";
+        const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8000";
         const res = await fetch(
           `${API_BASE}/api/ml/predict?community_district=${encodeURIComponent(
             districtID

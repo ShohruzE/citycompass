@@ -25,15 +25,11 @@ export default function SignUpPage() {
     try {
       setErrorMessage("");
 
-      // const backendURL = {process.env.BACKEND_URL};
+      // OAuth flow: Backend handles redirect after authentication
       window.location.href = `${API_BASE}/api/auth/ms-login`;
     } catch {
       setErrorMessage("failed to initiate Microsoft Sign in");
     }
-    setTimeout(() => {
-      window.location.href = "/survey";
-    }, 1000);
-    // console.log('cookie', data);
   };
 
   const handleEmailSignup = async (formData: FormData) => {

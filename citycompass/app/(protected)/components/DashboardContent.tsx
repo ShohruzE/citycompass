@@ -4,9 +4,10 @@ import * as React from "react";
 import InsightCard from "../components/InsightCard";
 import StaticNYCMap from "../components/StaticNYCMap";
 import { ScoreCard } from "../components/ScoreCard";
+import { ChatPanel } from "../components/chat";
 import { Leaf, ShieldCheck, Database, MapPin, Users, DollarSign, Calendar, AlertCircle } from "lucide-react";
 import useNeighborhoodACS from "../hooks/useNeighborhoodACS";
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect } from "react";
 import { useUserLocation } from "@/lib/contexts/UserLocationContext";
 import { LocationSearchCombobox } from "../components/LocationSearchCombobox";
 import { LocationBadge } from "../components/LocationBadge";
@@ -14,13 +15,9 @@ import { getDisplayNameForZip, type Location } from "@/lib/data/nyc-locations";
 import { inferBoroughFromZip } from "@/lib/actions/location";
 import { useRouter, useSearchParams } from "next/navigation";
 
-import { connection } from 'next/server'
-// import DashboardContent from "../components/DashboardContent";
-
-const DashboardContent =  () => {
-    
-    const { zipCode, neighborhood, loading: locationLoading, refreshLocation, updateLocation } = useUserLocation();
-    // await connection()
+const DashboardContent = () => {
+  const { zipCode, neighborhood, loading: locationLoading, refreshLocation, updateLocation } = useUserLocation();
+  // await connection()
   // Use user's zip code or fallback to default
   const defaultZip = zipCode || "10001";
 
@@ -46,7 +43,6 @@ const DashboardContent =  () => {
     }
   }, [viewingZip, acsZip, setAcsZip]);
 
-
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isLoading, setIsLoading] = useState(true);
@@ -54,19 +50,19 @@ const DashboardContent =  () => {
   useEffect(() => {
     // Check if token is in URL (from OAuth redirect)'
     const tokenFromUrl = searchParams.get("token");
-    console.log(tokenFromUrl)
-    
+    console.log(tokenFromUrl);
+
     if (tokenFromUrl) {
       // Save token to localStorage
       localStorage.setItem("token", tokenFromUrl);
-      
+
       // Clean up URL by removing token parameter
-      window.history.replaceState({}, '', '/dashboard');
+      window.history.replaceState({}, "", "/dashboard");
     }
-    
+
     // Check if user is authenticated
     const token = localStorage.getItem("token");
-    
+
     // redirect unauthenticated user
     if (!token) {
       // No token found, redirect to sign in
@@ -154,154 +150,160 @@ const DashboardContent =  () => {
   // Get display name for current viewing location
   const viewingLocationName = viewingLocation?.label || getDisplayNameForZip(viewingZip);
 
-    return(
+  // Handle navigation from chat to a specific ZIP
+  const handleNavigateToZip = (zip: string) => {
+    setViewingZip(zip);
+    setViewingLocation(null);
+  };
 
-   
+  return (
+    <>
+      {/* Main Dashboard Content */}
+      <div className="space-y-6">
+        {/* Header */}
+        <header className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-semibold text-foreground">Neighborhood Dashboard</h1>
+            <p className="text-sm text-muted-foreground mt-1">Discover insights for New York City neighborhoods</p>
+          </div>
 
-    <div className="space-y-6">
-      {/* Header */}
-      <header className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-semibold text-foreground">Neighborhood Dashboard</h1>
-          <p className="text-sm text-muted-foreground mt-1">Discover insights for New York City neighborhoods</p>
-        </div>
-
-        <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
-          {zipCode && (
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-muted/50 border border-border transition-all duration-200 hover:bg-muted">
-              <MapPin className="w-3.5 h-3.5 text-muted-foreground" />
-              <div className="text-xs">
-                <span className="text-muted-foreground">Saved: </span>
-                <span className="font-medium text-foreground">{zipCode}</span>
+          <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+            {zipCode && (
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-muted/50 border border-border transition-all duration-200 hover:bg-muted">
+                <MapPin className="w-3.5 h-3.5 text-muted-foreground" />
+                <div className="text-xs">
+                  <span className="text-muted-foreground">Saved: </span>
+                  <span className="font-medium text-foreground">{zipCode}</span>
+                </div>
               </div>
-            </div>
-          )}
-          <button
-            onClick={refreshLocation}
-            disabled={locationLoading}
-            aria-label="Refresh your saved location"
-            className="text-xs px-3 py-1.5 rounded-md bg-muted hover:bg-muted/80 text-foreground font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed focus:ring-2 focus:ring-primary focus:ring-offset-2"
-          >
-            {locationLoading ? "Loading..." : "Refresh"}
-          </button>
-        </div>
-      </header>
-
-      {/* Location Badge and Search */}
-      <div className="space-y-3">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-          <LocationBadge
-            zipCode={viewingZip}
-            locationName={viewingLocationName}
-            isUserLocation={!isViewingDifferentLocation}
-            className="w-full sm:w-auto"
-          />
-
-          {isViewingDifferentLocation && (
+            )}
             <button
-              onClick={handleSetAsMyLocation}
-              disabled={isUpdatingLocation}
-              aria-label="Set current viewing location as your saved location"
-              className="w-full sm:w-auto px-5 py-2.5 rounded-lg bg-primary text-primary-foreground font-medium text-sm hover:bg-primary/90 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow-md focus:ring-2 focus:ring-primary focus:ring-offset-2 whitespace-nowrap"
+              onClick={refreshLocation}
+              disabled={locationLoading}
+              aria-label="Refresh your saved location"
+              className="text-xs px-3 py-1.5 rounded-md bg-muted hover:bg-muted/80 text-foreground font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed focus:ring-2 focus:ring-primary focus:ring-offset-2"
             >
-              {isUpdatingLocation ? (
-                <span className="flex items-center justify-center gap-2">
-                  <span className="animate-spin">⏳</span>
-                  Saving...
-                </span>
-              ) : (
-                "Set as My Location"
-              )}
+              {locationLoading ? "Loading..." : "Refresh"}
             </button>
-          )}
-        </div>
-
-        {/* Search Bar */}
-        <div className="w-full">
-          <LocationSearchCombobox value={viewingZip} onChange={handleLocationChange} disabled={locationLoading} />
-        </div>
-      </div>
-
-      {/* Score Cards*/}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <ScoreCard
-          title="Population"
-          value={acsLoading ? "—" : population}
-          subtitle={acsLoading ? "Loading…" : `ZIP: ${acsZip}`}
-          icon={<Users className="w-4 h-4" />}
-          color="blue"
-          insight={acsLoading ? "—" : popInsight}
-        />
-        <ScoreCard
-          title="Median income"
-          value={acsLoading ? "—" : medianIncome}
-          subtitle={acsLoading ? "Loading…" : `ZIP: ${acsZip}`}
-          icon={<DollarSign className="w-4 h-4" />}
-          color="green"
-          insight={acsLoading ? "—" : incomeInsight}
-        />
-        <ScoreCard
-          title="Median age"
-          value={acsLoading ? "—" : medianAge}
-          subtitle={acsLoading ? "Loading…" : `ZIP: ${acsZip}`}
-          icon={<Calendar className="w-4 h-4" />}
-          color="purple"
-          insight={acsLoading ? "—" : ageInsight}
-        />
-        <ScoreCard
-          title="Poverty rate"
-          value={acsLoading ? "—" : povertyRate}
-          subtitle={acsLoading ? "Loading…" : `ZIP: ${acsZip}`}
-          icon={<AlertCircle className="w-4 h-4" />}
-          color="amber"
-          insight={acsLoading ? "—" : povertyInsight}
-        />
-      </div>
-
-      <div className="grid grid-cols-3 gap-6">
-        {/* Left: Map Section */}
-        <div className="col-span-2 bg-card rounded-2xl shadow-sm border border-border p-4">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="font-medium text-foreground">Neighborhood Overview</h2>
-            <button className="text-sm text-primary hover:underline">Full Map</button>
           </div>
+        </header>
+
+        {/* Location Badge and Search */}
+        <div className="space-y-3">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <LocationBadge
+              zipCode={viewingZip}
+              locationName={viewingLocationName}
+              isUserLocation={!isViewingDifferentLocation}
+              className="w-full sm:w-auto"
+            />
+
+            {isViewingDifferentLocation && (
+              <button
+                onClick={handleSetAsMyLocation}
+                disabled={isUpdatingLocation}
+                aria-label="Set current viewing location as your saved location"
+                className="w-full sm:w-auto px-5 py-2.5 rounded-lg bg-primary text-primary-foreground font-medium text-sm hover:bg-primary/90 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow-md focus:ring-2 focus:ring-primary focus:ring-offset-2 whitespace-nowrap"
+              >
+                {isUpdatingLocation ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <span className="animate-spin">⏳</span>
+                    Saving...
+                  </span>
+                ) : (
+                  "Set as My Location"
+                )}
+              </button>
+            )}
+          </div>
+
+          {/* Search Bar */}
           <div className="w-full">
-            <StaticNYCMap currentZipCode={viewingZip || undefined} />
+            <LocationSearchCombobox value={viewingZip} onChange={handleLocationChange} disabled={locationLoading} />
           </div>
         </div>
 
-        {/* Right: Insights */}
-        <div className="flex flex-col gap-4">
-          <InsightCard
-            color="green"
-            icon={<Leaf className="w-4 h-4 text-green-600 dark:text-green-400" />}
-            title="Food Access Strength"
-            description="Your neighborhood ranks higher than 70% in Food Access but scores 12 points lower than average in Safety."
-            actionText="View Details"
-          />
-
-          <InsightCard
+        {/* Score Cards*/}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <ScoreCard
+            title="Population"
+            value={acsLoading ? "—" : population}
+            subtitle={acsLoading ? "Loading…" : `ZIP: ${acsZip}`}
+            icon={<Users className="w-4 h-4" />}
             color="blue"
-            icon={<ShieldCheck className="w-4 h-4 text-blue-600 dark:text-blue-400" />}
-            title="Safety Improvement"
-            description="Safety projected to improve +4–6 points by April based on recent trends and city initiatives."
-            actionText="See Forecast"
+            insight={acsLoading ? "—" : popInsight}
           />
-
-          <InsightCard
+          <ScoreCard
+            title="Median income"
+            value={acsLoading ? "—" : medianIncome}
+            subtitle={acsLoading ? "Loading…" : `ZIP: ${acsZip}`}
+            icon={<DollarSign className="w-4 h-4" />}
+            color="green"
+            insight={acsLoading ? "—" : incomeInsight}
+          />
+          <ScoreCard
+            title="Median age"
+            value={acsLoading ? "—" : medianAge}
+            subtitle={acsLoading ? "Loading…" : `ZIP: ${acsZip}`}
+            icon={<Calendar className="w-4 h-4" />}
+            color="purple"
+            insight={acsLoading ? "—" : ageInsight}
+          />
+          <ScoreCard
+            title="Poverty rate"
+            value={acsLoading ? "—" : povertyRate}
+            subtitle={acsLoading ? "Loading…" : `ZIP: ${acsZip}`}
+            icon={<AlertCircle className="w-4 h-4" />}
             color="amber"
-            icon={<Database className="w-4 h-4 text-amber-600 dark:text-amber-400" />}
-            title="Data Update"
-            description="New survey responses available. Your input helps improve neighborhood scoring accuracy."
-            actionText="Take Survey"
+            insight={acsLoading ? "—" : povertyInsight}
           />
         </div>
+
+        <div className="grid grid-cols-3 gap-6">
+          {/* Left: Map Section */}
+          <div className="col-span-2 bg-card rounded-2xl shadow-sm border border-border p-4">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="font-medium text-foreground">Neighborhood Overview</h2>
+              <button className="text-sm text-primary hover:underline">Full Map</button>
+            </div>
+            <div className="w-full">
+              <StaticNYCMap currentZipCode={viewingZip || undefined} />
+            </div>
+          </div>
+
+          {/* Right: Insights */}
+          <div className="flex flex-col gap-4">
+            <InsightCard
+              color="green"
+              icon={<Leaf className="w-4 h-4 text-green-600 dark:text-green-400" />}
+              title="Food Access Strength"
+              description="Your neighborhood ranks higher than 70% in Food Access but scores 12 points lower than average in Safety."
+              actionText="View Details"
+            />
+
+            <InsightCard
+              color="blue"
+              icon={<ShieldCheck className="w-4 h-4 text-blue-600 dark:text-blue-400" />}
+              title="Safety Improvement"
+              description="Safety projected to improve +4–6 points by April based on recent trends and city initiatives."
+              actionText="See Forecast"
+            />
+
+            <InsightCard
+              color="amber"
+              icon={<Database className="w-4 h-4 text-amber-600 dark:text-amber-400" />}
+              title="Data Update"
+              description="New survey responses available. Your input helps improve neighborhood scoring accuracy."
+              actionText="Take Survey"
+            />
+          </div>
+        </div>
       </div>
-    </div>
-    
 
-    )
+      {/* AI Chat Panel - Floating button that expands to sidebar */}
+      <ChatPanel onNavigateToZip={handleNavigateToZip} />
+    </>
+  );
+};
 
-}
-
-export default DashboardContent
+export default DashboardContent;

@@ -491,8 +491,9 @@ export default function FullPageMapClient() {
           return;
         }
         try {
+          const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8000";
           const response = await fetch(
-            `http://localhost:8000/api/ml/predict?community_district=${districtID}`
+            `${API_BASE}/api/ml/predict?community_district=${districtID}`
           );
           const data: DistrictData = await response.json();
 
