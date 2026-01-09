@@ -163,7 +163,7 @@ export function parseNeighborhoodData(result: string, toolName: string): Neighbo
   try {
     // Pattern for NSQI results
     // e.g., "NSQI Results for ZIP 10001 (Manhattan, District MN01):"
-    const nsqiPattern = /NSQI Results for ZIP (\d{5}) \(([^,]+)(?:, District ([A-Z]{2}\d+))?\):\s*.*?Score: ([\d.]+)\/100\s*.*?Grade: ([A-F])/gs;
+    const nsqiPattern = /NSQI Results for ZIP (\d{5}) \(([^,]+)(?:, District ([A-Z]{2}\d+))?\):[\s\S]*?Score: ([\d.]+)\/100[\s\S]*?Grade: ([A-F])/g;
     
     // Pattern for search results
     // e.g., "1. ZIP 10001 - Manhattan (District MN01)\n   NSQI: 75.2/100 (Grade B)"
